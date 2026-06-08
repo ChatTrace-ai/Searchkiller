@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://g-rapid-agent.local/schemas/trace.schema.json",
+  "$id": "https://searchkiller.local/schemas/trace.schema.json",
   "title": "Execution Trace",
   "description": "A single execution trace record emitted by the Planner and judged by the Evaluator.",
   "type": "object",
@@ -37,8 +37,8 @@
     },
     "verdict": {
       "type": "string",
-      "enum": ["PENDING", "AWAITING_HUMAN", "APPROVED", "REJECTED"],
-      "description": "Current evaluation state of this trace"
+      "enum": ["PENDING", "APPROVED", "REJECTED"],
+      "description": "Current evaluation state of this trace. PENDING until the Evaluator runs autonomous judgment."
     },
     "metadata": {
       "type": "object",

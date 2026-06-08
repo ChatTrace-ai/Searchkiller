@@ -2,7 +2,8 @@
  * Recycle Pattern Engine
  *
  * Orchestrates the full feedback loop:
- *   Planner.plan() → Evaluator.beginEvaluation() → HITL gate → route to store
+ *   Human initializes Evaluator (HITL) → Evaluator runs autonomously
+ *   Planner.plan() → Evaluator.evaluate() → route to golden/failures
  *
  * Also provides regression utilities:
  *   - Compare new traces against golden benchmarks
@@ -11,11 +12,10 @@
 
 import { plan, loadTrace, listTraces, type TraceRecord } from './planner';
 import {
-  beginEvaluation,
-  finalizeEvaluation,
+  evaluate,
+  isInitialized,
   queryFailures,
   listGoldenBenchmarks,
-  type HITLSignal,
   type EvaluationRecord,
 } from './evaluator';
 import { readFile } from 'fs/promises';
@@ -25,29 +25,31 @@ const GOLDEN_DIR = join(process.cwd(), '.agents', 'golden');
 
 export interface RecycleResult {
   traceId: string;
-  preScreenWarnings: string[];
-  awaitingHuman: boolean;
-}
-
-export interface FullCycleResult {
-  traceId: string;
   evaluation: EvaluationRecord;
+  preScreenWarnings: string[];
   recycledTo: 'golden' | 'failures';
 }
 
 /**
- * Execute the first half of the recycle loop:
- * 1. Emit a trace via the Planner
+ * Execute the full recycle loop in one step:
+ * 1. Emit trace via Planner
  * 2. Pre-screen against known failure patterns
- * 3. Begin evaluation (advances to AWAITING_HUMAN)
+ * 3. Evaluate autonomously using HITL-initialized config
+ * 4. Route to golden/ or failures/
  *
- * Returns pre-screen warnings and the trace ID for HITL pickup.
+ * Requires the Evaluator to have been initialized via HITL.
  */
-export async function initiateRecycle(
+export async function recycle(
   keyword: string,
   subQueries: string[],
   meta?: Record<string, unknown>,
 ): Promise<RecycleResult> {
+  if (!isInitialized()) {
+    throw new Error(
+      'Evaluator not initialized. Human must call POST /api/evaluate {action:"initialize"} first.',
+    );
+  }
+
   const planResult = await plan(keyword, subQueries, meta);
 
   const warnings: string[] = [];
@@ -58,29 +60,47 @@ export async function initiateRecycle(
     );
   }
 
-  await beginEvaluation(planResult.traceId);
+  const evaluation = await evaluate(planResult.traceId);
 
   return {
     traceId: planResult.traceId,
+    evaluation,
     preScreenWarnings: warnings,
-    awaitingHuman: true,
+    recycledTo: evaluation.verdict === 'APPROVED' ? 'golden' : 'failures',
   };
 }
 
 /**
- * Complete the recycle loop with a HITL signal.
- * Routes the evaluation to the appropriate store.
+ * Evaluate an existing trace (already emitted by Planner).
+ * Use when the trace was created separately and needs evaluation.
  */
-export async function completeRecycle(
+export async function evaluateExisting(
   traceId: string,
-  signal: HITLSignal,
-): Promise<FullCycleResult> {
-  const evaluation = await finalizeEvaluation(traceId, signal);
+): Promise<RecycleResult> {
+  if (!isInitialized()) {
+    throw new Error(
+      'Evaluator not initialized. Human must call POST /api/evaluate {action:"initialize"} first.',
+    );
+  }
+
+  const trace = await loadTrace(traceId);
+  const keyword = (trace.metadata?.keyword as string) ?? '';
+
+  const warnings: string[] = [];
+  const similarFailures = await queryFailures(keyword);
+  if (similarFailures.length > 0) {
+    warnings.push(
+      `Found ${similarFailures.length} similar failure(s): ${similarFailures.map((f) => f.root_cause).join(', ')}`,
+    );
+  }
+
+  const evaluation = await evaluate(traceId);
 
   return {
     traceId,
     evaluation,
-    recycledTo: signal.verdict === 'APPROVED' ? 'golden' : 'failures',
+    preScreenWarnings: warnings,
+    recycledTo: evaluation.verdict === 'APPROVED' ? 'golden' : 'failures',
   };
 }
 
@@ -124,6 +144,7 @@ export async function regressionCheck(
  * Get a summary of the recycle system state.
  */
 export async function getRecycleStats(): Promise<{
+  evaluatorInitialized: boolean;
   totalTraces: number;
   goldenCount: number;
   failureCount: number;
@@ -136,9 +157,7 @@ export async function getRecycleStats(): Promise<{
   for (const tid of traceIds) {
     try {
       const trace = await loadTrace(tid);
-      if (trace.verdict === 'PENDING' || trace.verdict === 'AWAITING_HUMAN') {
-        pendingCount++;
-      }
+      if (trace.verdict === 'PENDING') pendingCount++;
     } catch {
       continue;
     }
@@ -147,6 +166,7 @@ export async function getRecycleStats(): Promise<{
   const failurePatterns = await queryFailures('');
 
   return {
+    evaluatorInitialized: isInitialized(),
     totalTraces: traceIds.length,
     goldenCount: goldenIds.length,
     failureCount: failurePatterns.length,

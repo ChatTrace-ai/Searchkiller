@@ -9,7 +9,7 @@ export interface TraceRecord {
   input_hash: string;
   output_hash: string;
   timestamp: string;
-  verdict: 'PENDING' | 'AWAITING_HUMAN' | 'APPROVED' | 'REJECTED';
+  verdict: 'PENDING' | 'APPROVED' | 'REJECTED';
   metadata?: Record<string, unknown>;
 }
 

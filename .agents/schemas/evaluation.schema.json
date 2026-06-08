@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://g-rapid-agent.local/schemas/evaluation.schema.json",
+  "$id": "https://searchkiller.local/schemas/evaluation.schema.json",
   "title": "Evaluation Record",
   "description": "An evaluation verdict for a trace, stored in golden/ or failures/.",
   "type": "object",
@@ -14,7 +14,7 @@
     "verdict": {
       "type": "string",
       "enum": ["APPROVED", "REJECTED"],
-      "description": "Final human-approved evaluation outcome"
+      "description": "Autonomous evaluation outcome (per HITL-initialized config)"
     },
     "evaluated_at": {
       "type": "string",
@@ -23,11 +23,16 @@
     },
     "evaluated_by": {
       "type": "string",
-      "description": "Identifier of the human reviewer"
+      "description": "Evaluator identity (evaluator:config:<initialized_by>)"
+    },
+    "config_snapshot": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the evaluator config used for this evaluation"
     },
     "quality_checks": {
       "type": "object",
-      "description": "Automated quality check results run before HITL gate",
+      "description": "Automated quality check results per HITL-initialized criteria",
       "properties": {
         "schema_valid": { "type": "boolean" },
         "output_non_empty": { "type": "boolean" },

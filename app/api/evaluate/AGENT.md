@@ -1,7 +1,7 @@
 # evaluate/ — Agent Manifest
 
 ## Role
-HITL evaluation API: initiate, finalize, and query the recycle pattern.
+Evaluator lifecycle API: HITL initialization + autonomous evaluation + stats.
 
 ## Contents
 | File | Description |
@@ -9,5 +9,5 @@ HITL evaluation API: initiate, finalize, and query the recycle pattern.
 | route.ts | POST handler: {action, ...payload} → evaluation result |
 
 ## Boundaries
-- reads: agents/recycle (initiateRecycle, completeRecycle, getRecycleStats)
-- writes: .agents/traces/, .agents/golden/, .agents/failures/ (via agents layer)
+- reads: agents/evaluator (initializeEvaluator, loadConfig, isInitialized), agents/recycle (recycle, evaluateExisting, getRecycleStats)
+- writes: .agents/evaluator-config.json (initialize), .agents/traces/, .agents/golden/, .agents/failures/ (via agents layer)

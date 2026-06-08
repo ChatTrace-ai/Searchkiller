@@ -1,12 +1,25 @@
-# evaluator/ — Evaluator Agent (HITL)
+# evaluator/ — Evaluator Agent (HITL-Initialized, Autonomous)
 
-The Evaluator judges execution outcomes with mandatory Human-in-the-Loop verification. It:
+The Evaluator is **initialized by a human** via HITL and then **runs autonomously**.
 
-1. Loads a trace from `.agents/traces/`
-2. Checks `.agents/failures/` for similar past failure patterns
-3. Runs automated quality checks
-4. Sets verdict to `AWAITING_HUMAN` and blocks until human approval
-5. On APPROVED: routes to `.agents/golden/` (Golden Benchmark)
-6. On REJECTED: routes to `.agents/failures/` with root-cause analysis
+## HITL Initialization (one-time or re-configurable)
 
-**Critical constraint**: The Evaluator NEVER auto-approves. Every evaluation requires explicit human sign-off.
+The human defines evaluation criteria by calling `POST /api/evaluate {action: "initialize"}`:
+- **Criteria**: schema validation, output non-empty, known failure pattern rejection
+- **Thresholds**: max latency, min source count, min quality score
+- **Custom rules**: field-level checks (e.g., `metadata.duration_ms < 5000`)
+- **Auto-approve**: whether passing traces are auto-approved
+
+The config is persisted to `.agents/evaluator-config.json`.
+
+## Autonomous Evaluation (every trace)
+
+Once initialized, the Evaluator processes traces without human intervention:
+
+1. Loads trace from `.agents/traces/`
+2. Loads persisted config from `.agents/evaluator-config.json`
+3. Runs all quality checks against the human-defined criteria
+4. All pass → APPROVED → `.agents/golden/`
+5. Any fail → REJECTED → `.agents/failures/` with auto-generated root cause
+
+The human can re-initialize at any time to update criteria.

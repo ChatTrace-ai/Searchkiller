@@ -1,19 +1,20 @@
 # evaluator/ — Agent Manifest
 
 ## Role
-Outcome judgment with mandatory HITL verification gate.
+Autonomous outcome judgment using HITL-initialized criteria.
 
 ## Contents
 | File | Description |
 |------|-------------|
-| index.ts | Evaluator agent entry point and public API |
+| index.ts | Evaluator: initializeEvaluator (HITL), evaluate (autonomous), query utilities |
 
 ## Boundaries
-- reads: .agents/traces/, .agents/golden/, .agents/failures/, .agents/schemas/
-- writes: .agents/golden/, .agents/failures/, .agents/traces/ (verdict update)
-- requires: human_approval BEFORE finalizing verdict
+- reads: .agents/traces/, .agents/golden/, .agents/failures/, .agents/evaluator-config.json
+- writes: .agents/golden/, .agents/failures/, .agents/traces/ (verdict update), .agents/evaluator-config.json
+- initialization: Human defines criteria via HITL → persisted config
+- runtime: Autonomous judgment against persisted config
 
 ## Contract
-- Input: trace ID referencing .agents/traces/{id}.json
-- Output: Verdict (APPROVED → golden/, REJECTED → failures/)
-- Constraint: NEVER auto-approve; always gate on HITL signal
+- Initialization: Human calls initializeEvaluator({criteria, thresholds}) via HITL
+- Evaluation: evaluate(traceId) → autonomous verdict → route to golden/failures
+- Constraint: MUST be initialized before first evaluation

@@ -7,7 +7,8 @@ JSON Schema definitions that enforce structural uniformity across all agent arti
 | Schema | Validates |
 |--------|-----------|
 | `trace.schema.json` | Execution trace records in `.agents/traces/` |
-| `evaluation.schema.json` | HITL evaluation verdicts attached to traces |
+| `evaluation.schema.json` | Evaluation verdicts stored in `golden/` and `failures/` |
+| `evaluator-config.schema.json` | HITL-initialized Evaluator configuration |
 | `agent-md.schema.json` | Structural format of all `AGENT.md` files |
 
 ## Usage

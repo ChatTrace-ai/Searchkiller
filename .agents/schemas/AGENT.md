@@ -7,7 +7,8 @@ SSOT schema definitions for all structured agent artifacts.
 | File | Validates |
 |------|-----------|
 | trace.schema.json | .agents/traces/*.json |
-| evaluation.schema.json | Verdict objects within traces |
+| evaluation.schema.json | .agents/golden/*.json and .agents/failures/*.json |
+| evaluator-config.schema.json | .agents/evaluator-config.json (HITL-initialized config) |
 | agent-md.schema.json | All AGENT.md files project-wide |
 
 ## Boundaries

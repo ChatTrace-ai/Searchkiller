@@ -1,20 +1,52 @@
 import { NextResponse } from 'next/server';
-import { initiateRecycle, completeRecycle, getRecycleStats } from '@/agents/recycle';
+import { initializeEvaluator, loadConfig, isInitialized } from '@/agents/evaluator';
+import { recycle, evaluateExisting, getRecycleStats } from '@/agents/recycle';
 
 /**
- * POST /api/evaluate — HITL evaluation endpoint
+ * POST /api/evaluate — Evaluator lifecycle endpoint
  *
  * Actions:
- *   initiate: Start the recycle loop for a new trace
- *   finalize: Complete evaluation with human verdict
- *   stats:    Get recycle system summary
+ *   initialize: (HITL) Human defines evaluation criteria/thresholds → persists config
+ *   config:     Read current evaluator configuration
+ *   evaluate:   Run autonomous evaluation on a new keyword (plan + evaluate)
+ *   evaluate_trace: Run autonomous evaluation on an existing trace
+ *   stats:      Get recycle system summary
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { action } = body;
 
-    if (action === 'initiate') {
+    if (action === 'initialize') {
+      const { initialized_by, criteria, thresholds, auto_approve, notes } = body;
+      if (!initialized_by || !criteria || !thresholds) {
+        return NextResponse.json(
+          { error: 'initialized_by, criteria, and thresholds are required' },
+          { status: 400 },
+        );
+      }
+      const config = await initializeEvaluator({
+        initialized_by,
+        criteria,
+        thresholds,
+        auto_approve: auto_approve ?? true,
+        notes,
+      });
+      return NextResponse.json({ status: 'initialized', config });
+    }
+
+    if (action === 'config') {
+      if (!isInitialized()) {
+        return NextResponse.json(
+          { error: 'Evaluator not initialized. Call action=initialize first.' },
+          { status: 400 },
+        );
+      }
+      const config = await loadConfig();
+      return NextResponse.json(config);
+    }
+
+    if (action === 'evaluate') {
       const { keyword, subQueries, meta } = body;
       if (!keyword || !subQueries) {
         return NextResponse.json(
@@ -22,28 +54,19 @@ export async function POST(req: Request) {
           { status: 400 },
         );
       }
-      const result = await initiateRecycle(keyword, subQueries, meta);
+      const result = await recycle(keyword, subQueries, meta);
       return NextResponse.json(result);
     }
 
-    if (action === 'finalize') {
-      const { traceId, signal } = body;
-      if (!traceId || !signal?.verdict || !signal?.reviewer) {
+    if (action === 'evaluate_trace') {
+      const { traceId } = body;
+      if (!traceId) {
         return NextResponse.json(
-          { error: 'traceId, signal.verdict, and signal.reviewer are required' },
+          { error: 'traceId is required' },
           { status: 400 },
         );
       }
-      if (
-        signal.verdict === 'REJECTED' &&
-        (!signal.root_cause || !signal.lesson)
-      ) {
-        return NextResponse.json(
-          { error: 'REJECTED verdicts require root_cause and lesson' },
-          { status: 400 },
-        );
-      }
-      const result = await completeRecycle(traceId, signal);
+      const result = await evaluateExisting(traceId);
       return NextResponse.json(result);
     }
 
@@ -53,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: `Unknown action: ${action}. Use initiate, finalize, or stats.` },
+      { error: `Unknown action: ${action}. Use initialize, config, evaluate, evaluate_trace, or stats.` },
       { status: 400 },
     );
   } catch (err: unknown) {
