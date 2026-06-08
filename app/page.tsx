@@ -23,7 +23,7 @@ export default function HomePage() {
         transition={{ duration: 0.6 }}
       >
         <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-google-blue to-blue-400 bg-clip-text text-transparent">
-          G-RapidAgent
+          Searchkiller
         </h1>
         <p className="text-gray-400 mb-12 text-lg">
           输入关键词，AI 自动生成深度研究报告与思维导图

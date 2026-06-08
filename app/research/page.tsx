@@ -126,7 +126,7 @@ export default function ResearchPage() {
     <div className="h-screen flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b border-surface-200">
-        <a href="/" className="text-google-blue font-semibold">G-RapidAgent</a>
+        <a href="/" className="text-google-blue font-semibold">Searchkiller</a>
         <span className="text-sm text-gray-400 truncate max-w-md">{keyword}</span>
         <div className="flex items-center gap-2">
           {phase === 'streaming' && (
