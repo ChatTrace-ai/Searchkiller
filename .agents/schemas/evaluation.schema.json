@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g-rapid-agent.local/schemas/evaluation.schema.json",
+  "title": "Evaluation Record",
+  "description": "An evaluation verdict for a trace, stored in golden/ or failures/.",
+  "type": "object",
+  "required": ["trace_id", "verdict", "evaluated_at", "evaluated_by"],
+  "properties": {
+    "trace_id": {
+      "type": "string",
+      "pattern": "^trace-[a-f0-9]{8,}$",
+      "description": "References the trace in .agents/traces/"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["APPROVED", "REJECTED"],
+      "description": "Final human-approved evaluation outcome"
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of evaluation completion"
+    },
+    "evaluated_by": {
+      "type": "string",
+      "description": "Identifier of the human reviewer"
+    },
+    "quality_checks": {
+      "type": "object",
+      "description": "Automated quality check results run before HITL gate",
+      "properties": {
+        "schema_valid": { "type": "boolean" },
+        "output_non_empty": { "type": "boolean" },
+        "no_known_failure_pattern": { "type": "boolean" },
+        "latency_acceptable": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "root_cause": {
+      "type": "string",
+      "description": "Root cause category (required when verdict=REJECTED)"
+    },
+    "lesson": {
+      "type": "string",
+      "description": "Lesson learned from failure (required when verdict=REJECTED)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional human reviewer notes"
+    }
+  },
+  "if": {
+    "properties": { "verdict": { "const": "REJECTED" } }
+  },
+  "then": {
+    "required": ["trace_id", "verdict", "evaluated_at", "evaluated_by", "root_cause", "lesson"]
+  },
+  "additionalProperties": false
+}

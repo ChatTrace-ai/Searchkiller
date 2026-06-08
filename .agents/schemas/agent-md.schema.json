@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g-rapid-agent.local/schemas/agent-md.schema.json",
+  "title": "AGENT.md Structure",
+  "description": "Defines the required structural sections for all AGENT.md files.",
+  "type": "object",
+  "required": ["heading", "sections"],
+  "properties": {
+    "heading": {
+      "type": "string",
+      "pattern": "^# .+ — Agent Manifest$",
+      "description": "First line must be '# <dirname>/ — Agent Manifest'"
+    },
+    "sections": {
+      "type": "object",
+      "required": ["role", "contents", "boundaries"],
+      "properties": {
+        "role": {
+          "type": "string",
+          "minLength": 10,
+          "description": "## Role section: one-line purpose statement"
+        },
+        "contents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["file", "dir", "pattern"] },
+              "description": { "type": "string" }
+            }
+          },
+          "description": "## Contents section: table of files/dirs in this directory"
+        },
+        "boundaries": {
+          "type": "object",
+          "required": ["reads", "writes"],
+          "properties": {
+            "reads": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Paths this directory is allowed to read from"
+            },
+            "writes": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Paths this directory is allowed to write to"
+            },
+            "never_imports_from": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Paths that must never be imported"
+            }
+          },
+          "description": "## Boundaries section: read/write permissions"
+        },
+        "permission_level": {
+          "type": "string",
+          "pattern": "^L[0-5]-",
+          "description": "Optional permission hierarchy level (L0-L5)"
+        },
+        "invariants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional invariants that must hold"
+        }
+      }
+    }
+  }
+}
