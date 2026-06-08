@@ -5,24 +5,24 @@
 #   bash scripts/worktree-new.sh <feature-name>
 #
 # Creates:
-#   ../G-RapidAgent-<feature-name>/  (worktree directory)
+#   ../Searchkiller-<feature-name>/  (worktree directory)
 #   feat/<feature-name>              (branch)
 #
 # Example:
 #   bash scripts/worktree-new.sh hitl-ui
-#   # Creates ../G-RapidAgent-hitl-ui/ on branch feat/hitl-ui
+#   # Creates ../Searchkiller-hitl-ui/ on branch feat/hitl-ui
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 <feature-name>"
-    echo "  Creates a git worktree at ../G-RapidAgent-<feature-name>"
+    echo "  Creates a git worktree at ../Searchkiller-<feature-name>"
     echo "  on branch feat/<feature-name>"
     exit 1
 fi
 
 FEATURE="$1"
 BRANCH="feat/${FEATURE}"
-WORKTREE_DIR="../G-RapidAgent-${FEATURE}"
+WORKTREE_DIR="../Searchkiller-${FEATURE}"
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 

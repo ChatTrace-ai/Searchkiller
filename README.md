@@ -1,18 +1,24 @@
-# G-RapidAgent
+# Searchkiller
 
-A keyword-driven streaming research agent built for the Google Cloud Hackathon. Enter any exploratory keyword and receive a structured industry analysis report + interactive mind map, powered by Gemini 2.5, Exa.ai semantic search, and Elasticsearch hybrid retrieval.
+**Searchkiller**（内部代号 G-RapidAgent）是一个面向 Google Cloud Hackathon 的关键词驱动流式调研智能体。输入任意探究性关键词，即可获得结构化行业分析报告与交互式思维导图，由 Gemini 2.5、Exa.ai 语义搜索与 Elasticsearch 混合检索驱动。
+
+**Repository:** [github.com/ChatTrace-ai/Searchkiller](https://github.com/ChatTrace-ai/Searchkiller)
 
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
+# 1. Clone
+git clone git@github.com:ChatTrace-ai/Searchkiller.git
+cd Searchkiller
+
+# 2. Install dependencies
 npm install
 
-# 2. Configure environment
+# 3. Configure environment
 cp .env.example .env
 # Fill in: GOOGLE_CLOUD_PROJECT, EXA_API_KEY, ES_CLOUD_ID, ES_API_KEY
 
-# 3. Run development server
+# 4. Run development server
 npm run dev
 ```
 
@@ -32,7 +38,7 @@ User keyword
 
 ## Multi-Agent System
 
-This project uses a **Planner + Evaluator** dual-agent architecture:
+Searchkiller uses a **Planner + Evaluator** dual-agent architecture:
 
 - **Planner**: Decomposes tasks, generates execution traces, orchestrates the research pipeline.
 - **Evaluator (HITL)**: Judges execution outcomes with mandatory human-in-the-loop approval before finalizing any evaluation state.
@@ -68,7 +74,8 @@ python scripts/uniformize.py     # Auto-fix structural drift
 
 Uses `git worktree` for isolated feature branches:
 ```bash
-git worktree add ../G-RapidAgent-my-feature -b feat/my-feature
+bash scripts/worktree-new.sh my-feature
+# Creates ../Searchkiller-my-feature on branch feat/my-feature
 ```
 
 ## Directory Overview
