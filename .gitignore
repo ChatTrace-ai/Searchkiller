@@ -12,3 +12,8 @@ node_modules/
 .agents/failures/*.json
 !.agents/failures/.gitkeep
 .agents/evaluator-config.json
+.agents/test-report.json
+
+# Playwright
+test-results/
+playwright-report/

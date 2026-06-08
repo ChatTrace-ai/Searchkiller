@@ -7,7 +7,9 @@ Multi-agent orchestration layer (L1 in permission hierarchy).
 | Path | Description |
 |------|-------------|
 | planner/ | Task decomposition + trace emission |
-| evaluator/ | HITL judgment + recycle pattern routing |
+| evaluator/ | HITL-initialized autonomous judgment + recycle pattern routing |
+| mcp/ | MCP bridges (Playwright test runner) |
+| recycle.ts | Recycle pattern engine (plan → evaluate → route) |
 
 ## Boundaries
 - reads: app/, lib/, .agents/schemas/, .agents/traces/, .agents/golden/, .agents/failures/

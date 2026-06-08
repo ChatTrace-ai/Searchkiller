@@ -19,6 +19,11 @@ export interface EvaluatorConfig {
     min_source_count?: number;
     min_quality_score?: number;
   };
+  playwright?: {
+    enabled: boolean;
+    suites: ('api' | 'ui' | 'state' | 'all')[];
+    fail_on_test_failure: boolean;
+  };
   auto_approve: boolean;
   notes?: string;
 }
@@ -30,12 +35,21 @@ export interface CustomRule {
   value: unknown;
 }
 
+export interface PlaywrightResult {
+  suite: string;
+  passed: number;
+  failed: number;
+  skipped: number;
+  ok: boolean;
+}
+
 export interface QualityChecks {
   schema_valid: boolean;
   output_non_empty: boolean;
   no_known_failure_pattern: boolean;
   latency_acceptable: boolean;
   custom_checks: { rule: string; passed: boolean }[];
+  playwright_checks: PlaywrightResult[];
   all_passed: boolean;
 }
 
@@ -163,12 +177,41 @@ export async function runQualityChecks(
     passed: evaluateCustomRule(trace, rule),
   }));
 
+  const playwrightChecks: PlaywrightResult[] = [];
+  if (config.playwright?.enabled) {
+    const { runTestSuite } = await import('../mcp/playwright-bridge');
+    for (const suite of config.playwright.suites) {
+      try {
+        const result = await runTestSuite(suite);
+        playwrightChecks.push({
+          suite: result.suite,
+          passed: result.passed,
+          failed: result.failed,
+          skipped: result.skipped,
+          ok: result.failed === 0,
+        });
+      } catch {
+        playwrightChecks.push({
+          suite,
+          passed: 0,
+          failed: 1,
+          skipped: 0,
+          ok: false,
+        });
+      }
+    }
+  }
+
+  const playwrightOk = !config.playwright?.fail_on_test_failure ||
+    playwrightChecks.every((c) => c.ok);
+
   const criteriaResults = [
     !config.criteria.require_schema_valid || schemaValid,
     !config.criteria.require_output_non_empty || outputNonEmpty,
     !config.criteria.reject_known_failure_patterns || noKnownPattern,
     latencyOk,
     ...customChecks.map((c) => c.passed),
+    playwrightOk,
   ];
 
   return {
@@ -177,6 +220,7 @@ export async function runQualityChecks(
     no_known_failure_pattern: noKnownPattern,
     latency_acceptable: latencyOk,
     custom_checks: customChecks,
+    playwright_checks: playwrightChecks,
     all_passed: criteriaResults.every(Boolean),
   };
 }
