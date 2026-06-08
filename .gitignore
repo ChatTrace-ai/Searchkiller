@@ -4,3 +4,11 @@ node_modules/
 .env.local
 *.log
 .DS_Store
+
+# Agent runtime state (generated at runtime, keep .gitkeep)
+.agents/traces/*.json
+.agents/golden/*.json
+!.agents/golden/.gitkeep
+.agents/failures/*.json
+!.agents/failures/.gitkeep
+.agents/evaluator-config.json
