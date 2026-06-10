@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Searchkiller — 新人引导手册</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --purple: #bc8cff;
+      --orange: #f0883e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 { color: #fff; font-size: 2rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h2 { color: var(--accent); font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+    h3 { color: var(--purple); font-size: 1.15rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    h4 { color: var(--orange); font-size: 1rem; margin-top: 1rem; margin-bottom: 0.3rem; }
+    p { margin-bottom: 1rem; }
+    ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+    li { margin-bottom: 0.3rem; }
+
+    .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.15em 0.4em;
+      font-size: 0.9em;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    pre code { background: none; border: none; padding: 0; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: var(--surface); color: var(--accent); font-weight: 600; }
+    td { background: var(--bg); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .ok { color: var(--green); }
+    .err { color: var(--red); }
+    .warn { color: var(--yellow); }
+    .accent { color: var(--accent); }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .toc { list-style: none; padding: 0; }
+    .toc li { margin: 0.3rem 0; }
+    .toc li::before { content: "→ "; color: var(--text-muted); }
+
+    .pipeline-visual {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    .pipeline-step {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .pipeline-arrow {
+      display: inline-block;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      margin: 0 0.3rem;
+      vertical-align: middle;
+    }
+    .step-plan { background: #1a3a5c; color: var(--accent); border: 1px solid var(--accent-dim); }
+    .step-fetch { background: #1a3c2a; color: var(--green); border: 1px solid #238636; }
+    .step-gen { background: #3a2a1a; color: var(--orange); border: 1px solid #9e6a03; }
+    .step-judge { background: #2a1a3a; color: var(--purple); border: 1px solid #8957e5; }
+
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin: 1rem 0;
+    }
+    .layer {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .layer-label { width: 60px; font-weight: 700; font-size: 0.8rem; opacity: 0.7; }
+    .layer-name { flex: 1; font-weight: 600; }
+    .layer-desc { flex: 2; color: var(--text-muted); font-size: 0.85rem; }
+    .layer-l0 { background: #1a1a2e; border-left: 3px solid var(--purple); }
+    .layer-l1 { background: #1a2e1a; border-left: 3px solid var(--green); }
+    .layer-l2 { background: #2e1a1a; border-left: 3px solid var(--orange); }
+    .layer-l3 { background: #1a2a3a; border-left: 3px solid var(--accent); }
+
+    .metric-card {
+      text-align: center;
+      padding: 1rem;
+    }
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .metric-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Searchkiller — 新人引导手册</h1>
+<p class="subtitle">从零到一：理解产品、架构与工程治理体系</p>
+
+<div class="card">
+  <ul class="toc">
+    <li><a href="#part1">第一部分：程序架构</a></li>
+    <li><a href="#part2">第二部分：Harness Engineering（治理工程）</a></li>
+    <li><a href="#quickstart">新人快速上手</a></li>
+    <li><a href="#references">延伸阅读</a></li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="part1">第一部分：程序架构</h2>
+
+<h3>1.1 Searchkiller 是什么？</h3>
+<p>Searchkiller 是一个关键词驱动的流式调研智能体。用户输入任意探究性关键词（例如「Gemini 2.5 在医疗诊断中的多模态应用趋势」），系统会并行实时输出两份结果：</p>
+<ul>
+  <li>左侧面板：结构化的 <strong>Markdown 分析报告</strong></li>
+  <li>右侧面板：交互式<strong>思维导图树</strong></li>
+</ul>
+<p>两个流同时推进 — 用户看到报告「逐字打出」的同时，脑图也在「生长」。</p>
+
+<h3>1.2 核心数据管道</h3>
+
+<div class="pipeline-visual">
+  <span class="pipeline-step step-plan">Plan<br><small>Gemini Flash · 6s</small></span>
+  <span class="pipeline-arrow">→</span>
+  <span class="pipeline-step step-fetch">Fetch<br><small>Exa + ES · 1s</small></span>
+  <span class="pipeline-arrow">→</span>
+  <span class="pipeline-step step-gen">Generate<br><small>Gemini Pro · 72s</small></span>
+  <span class="pipeline-arrow">→</span>
+  <span class="pipeline-step step-judge">Judge<br><small>Flash · 5s</small></span>
+</div>
+
+<table>
+  <tr><th>阶段</th><th>API 路由</th><th>模型 / 服务</th><th>职责</th><th>耗时</th></tr>
+  <tr><td>规划</td><td><code>POST /api/plan</code></td><td>Gemini 2.5 Flash</td><td>关键词 → 3~5 条子查询</td><td>~6s</td></tr>
+  <tr><td>抓取</td><td><code>POST /api/research/fetch</code></td><td>Exa.ai + Elasticsearch</td><td>并发网页抓取 + 内部 RAG</td><td>~1s</td></tr>
+  <tr><td>报告</td><td><code>POST /api/research/report</code></td><td>Gemini 2.5 Pro</td><td>流式 Markdown 分析报告</td><td>~72s</td></tr>
+  <tr><td>脑图</td><td><code>POST /api/research/mindmap</code></td><td>Gemini 2.5 Pro</td><td>流式结构化树 JSON</td><td>并行</td></tr>
+  <tr><td>评分</td><td><code>POST /api/evaluate</code></td><td>Gemini 2.5 Flash</td><td>4 维评分 + 结构化反馈</td><td>~5s</td></tr>
+</table>
+
+<h3>1.3 技术栈一览</h3>
+<table>
+  <tr><th>层级</th><th>选型</th><th>理由</th></tr>
+  <tr><td>框架</td><td>Next.js 16 App Router</td><td>RSC + Turbopack，一键 Docker 部署</td></tr>
+  <tr><td>语言</td><td>TypeScript + React 19</td><td>高频流式状态更新下的类型安全</td></tr>
+  <tr><td>AI 模型</td><td>Gemini 2.5 Pro / Flash</td><td>Flash 负责速度（规划 + 评分），Pro 负责深度（报告 + 脑图）</td></tr>
+  <tr><td>AI SDK</td><td>Vercel AI SDK v6 + Zod 4</td><td>generateText / generateObject 结构化输出</td></tr>
+  <tr><td>外网搜索</td><td>Exa.ai</td><td>神经语义搜索，自动清洗 HTML 为纯文本</td></tr>
+  <tr><td>内网检索</td><td>Elasticsearch Serverless</td><td>BM25 + kNN 混合检索（RRF），对齐私有数据</td></tr>
+  <tr><td>可视化</td><td>react-d3-tree + Framer Motion 12</td><td>交互式树 + 流式「生长」动画</td></tr>
+  <tr><td>样式</td><td>TailwindCSS</td><td>深色科技风，Google Blue (#4285F4) 主色</td></tr>
+  <tr><td>部署</td><td>Docker → GCP Cloud Run</td><td>Standalone 构建，自动伸缩</td></tr>
+</table>
+
+<h3>1.4 4 层架构</h3>
+
+<div class="layer-stack">
+  <div class="layer layer-l0">
+    <span class="layer-label">L0</span>
+    <span class="layer-name">harness/</span>
+    <span class="layer-desc">通用反馈循环框架 — IJudge, IReportGenerator 接口，零外部依赖</span>
+  </div>
+  <div class="layer layer-l1">
+    <span class="layer-label">L1</span>
+    <span class="layer-name">agents/</span>
+    <span class="layer-desc">实现 harness 接口 — LLM-Judge, Planner, Evaluator</span>
+  </div>
+  <div class="layer layer-l2">
+    <span class="layer-label">L2</span>
+    <span class="layer-name">app/</span>
+    <span class="layer-desc">Next.js 页面 + API 路由 — 通过 lib/ 访问 harness</span>
+  </div>
+  <div class="layer layer-l3">
+    <span class="layer-label">L3</span>
+    <span class="layer-name">lib/</span>
+    <span class="layer-desc">共享工具 + harness-adapter.ts（L0 与 L1 的唯一桥接）</span>
+  </div>
+</div>
+
+<p>Import 方向<strong>只能向下</strong>：<code>app/</code> → <code>lib/</code> → <code>harness/</code> / <code>agents/</code>。<code>app/</code> 不直接引用 <code>agents/</code> 或 <code>harness/</code>。</p>
+
+<h3>1.5 目录地图</h3>
+<pre><code>Searchkiller/
+├── harness/                ← L0: 通用反馈循环框架
+│   ├── types.ts               接口定义 (IJudge, IReportGenerator)
+│   ├── handoff.ts             结构化 Handoff 协议
+│   ├── sprint-contract.ts     Sprint 合约 (4 维评分)
+│   ├── feedback-loop.ts       反馈循环引擎
+│   └── index.ts               Barrel export
+│
+├── agents/                 ← L1: 多智能体编排逻辑
+│   ├── planner/               Trace 发射 + 任务分解
+│   ├── evaluator/             HITL 初始化 + 自治评估
+│   │   └── llm-judge.ts       Gemini Flash 4 维评分 (thinkingBudget=0, ~4s)
+│   ├── mcp/                   Playwright MCP 桥接
+│   └── recycle.ts             回收模式引擎
+│
+├── app/                    ← L2: Next.js 页面 + API 路由
+│   ├── page.tsx               首页（搜索输入框）
+│   ├── research/page.tsx      调研仪表盘（双栏流式渲染）
+│   └── api/
+│       ├── plan/              关键词 → 子查询
+│       ├── research/
+│       │   ├── fetch/         Exa + ES → 会话缓存
+│       │   ├── report/        Gemini Pro → Markdown 流
+│       │   └── mindmap/       Gemini Pro → JSON 流
+│       └── evaluate/          Evaluator + Feedback Loop API
+│
+├── lib/                    ← L3: 纯共享工具库
+│   ├── gemini.ts              Gemini Flash + Pro 模型实例
+│   ├── exa.ts                 Exa.ai 语义搜索客户端
+│   ├── elasticsearch.ts       ES 混合检索客户端
+│   ├── schemas.ts             Zod 4 Schema + TypeScript 接口
+│   ├── context-cache.ts       研究会话内存缓存
+│   └── harness-adapter.ts     ⚡ harness ↔ agents 唯一桥接
+│
+├── components/             ← React UI 组件
+├── .agents/                ← 运行时文件存储 (git-ignored)
+│   ├── handoffs/              Handoff 文档
+│   ├── contracts/             Sprint 合约
+│   ├── loops/                 反馈循环状态
+│   ├── traces/                执行追踪
+│   ├── golden/                通过评估的模式
+│   └── failures/              失败模式 + root_cause
+│
+├── tests/                  ← 单元/集成/E2E 测试
+├── scripts/                ← SSOT 验证脚本
+└── doc/                    ← 技术文档</code></pre>
+
+<h3>1.6 请求生命周期</h3>
+<pre><code>浏览器                          服务器                           外部服务
+──────                          ──────                           ────────
+page.tsx
+  │
+  ├─ POST /api/plan ──────────→ route.ts
+  │                                │
+  │                                ├─ Gemini Flash ──────────→ Vertex AI
+  │                                │                    ←── subQueries[]
+  │  ◄── { subQueries } ──────────┘
+  │
+  ├─ POST /api/research/fetch ──→ route.ts
+  │                                │
+  │                                ├─ Exa.searchAndContents ─→ Exa.ai
+  │                                ├─ ES hybridSearch ───────→ Elastic Cloud
+  │                                │
+  │                                └─ cache(sessionId, context)
+  │  ◄── { sessionId, sources } ───┘
+  │
+  ├─ POST /api/research/report ─→ route.ts ─→ Gemini Pro streamText()
+  │  ◄── 流式 Markdown ─────────── text chunks ──────────────→ StreamingReport
+  │
+  └─ POST /api/research/mindmap → route.ts ─→ Gemini Pro streamObject()
+     ◄── 流式 JSON ─────────────── tree chunks ─────────────→ MindMap</code></pre>
+<p><code>report</code> 和 <code>mindmap</code> 两个流<strong>并行执行</strong> — 用户同时看到两个面板在更新。</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="part2">第二部分：Harness Engineering（治理工程）</h2>
+
+<h3>2.1 什么是 Harness Engineering？</h3>
+<p>仓库本身就是 Agent 的运行时。<code>.agents/</code> 目录下的文件系统充当确定性状态机。每个 Agent 动作都会在磁盘上产生结构化记录。</p>
+<p>三个核心原则：</p>
+<ol>
+  <li><strong>仓库即 Trace 系统</strong> — 每次动作写 JSON 到 <code>.agents/</code></li>
+  <li><strong>双 Markdown 隔离</strong> — <code>README.md</code>（人）+ <code>AGENT.md</code>（机器）</li>
+  <li><strong>接口解耦</strong> — 通用框架 (<code>harness/</code>) 通过 IJudge / IReportGenerator 接口与业务逻辑 (<code>agents/</code>) 分离</li>
+</ol>
+
+<h3>2.2 反馈循环引擎</h3>
+<p>核心创新：<strong>解耦的迭代质量反馈循环</strong>，替代原来的单次评估模式。</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Before（单次评估）</h4>
+    <p>Planner → Evaluator → APPROVED / REJECTED</p>
+    <p class="err">问题：无迭代、无反馈、无合约</p>
+  </div>
+  <div class="card">
+    <h4>After（迭代反馈循环）</h4>
+    <p>Generator → Judge → 反馈 → 重生成 → 再评分 → ... → APPROVED</p>
+    <p class="ok">最多 10 轮迭代，4 维评分，Sprint 合约</p>
+  </div>
+</div>
+
+<h4>四个 Harness 组件</h4>
+<table>
+  <tr><th>组件</th><th>文件</th><th>职责</th></tr>
+  <tr><td>Handoff Protocol</td><td><code>harness/handoff.ts</code></td><td>Agent 间结构化上下文传递，文件存储</td></tr>
+  <tr><td>Sprint Contract</td><td><code>harness/sprint-contract.ts</code></td><td>协商式验收标准，4 维加权评分 + 硬阈值</td></tr>
+  <tr><td>LLM-as-Judge</td><td><code>agents/evaluator/llm-judge.ts</code></td><td>Gemini Flash 评分（thinkingBudget=0, ~4s）</td></tr>
+  <tr><td>Feedback Loop</td><td><code>harness/feedback-loop.ts</code></td><td>迭代循环引擎，通过接口注入 Judge + Generator</td></tr>
+</table>
+
+<h4>已验证性能指标</h4>
+<div class="grid-2">
+  <div class="card metric-card">
+    <div class="metric-value">50x</div>
+    <div class="metric-label">Judge 速度提升 (186s → 3.7s)</div>
+  </div>
+  <div class="card metric-card">
+    <div class="metric-value">8.80</div>
+    <div class="metric-label">2 轮迭代后最高评分 (/10)</div>
+  </div>
+  <div class="card metric-card">
+    <div class="metric-value">~62s</div>
+    <div class="metric-label">全自动管线 (keyword only)</div>
+  </div>
+  <div class="card metric-card">
+    <div class="metric-value">15</div>
+    <div class="metric-label">Exa.ai 单次搜索来源数</div>
+  </div>
+</div>
+
+<h3>2.3 评分维度</h3>
+<table>
+  <tr><th>维度</th><th>权重</th><th>硬阈值</th><th>目标</th><th>说明</th></tr>
+  <tr><td>事实准确性 (factual_accuracy)</td><td>30%</td><td>5.0</td><td>7.5</td><td>信息与来源一致，无捏造</td></tr>
+  <tr><td>结构完整性 (structural_completeness)</td><td>25%</td><td>5.0</td><td>7.0</td><td>必要章节齐全，逻辑连贯</td></tr>
+  <tr><td>分析深度 (analysis_depth)</td><td>25%</td><td>4.0</td><td>7.0</td><td>超越表面描述，有洞察力</td></tr>
+  <tr><td>引用质量 (citation_quality)</td><td>20%</td><td>4.0</td><td>6.5</td><td>引用充分、准确、可靠</td></tr>
+</table>
+
+<h3>2.4 双 Markdown 模式</h3>
+<p>除 <code>doc/</code> 外的每个目录都包含：</p>
+<table>
+  <tr><th>文件</th><th>受众</th><th>内容</th></tr>
+  <tr><td><code>README.md</code></td><td>人类</td><td>引导说明、意图、高层上下文</td></tr>
+  <tr><td><code>AGENT.md</code></td><td>机器</td><td>文件清单、读写边界、不变量</td></tr>
+</table>
+<pre><code>bash scripts/verify-dual-md.sh   # 检查合规性
+python scripts/lint-agent-md.py  # 校验结构</code></pre>
+
+<p>详细技术文档参见 <a href="harness-engineering.html">Harness Engineering (HTML)</a>。</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="quickstart">新人快速上手</h2>
+
+<pre><code># 1. 克隆仓库
+git clone git@github.com:ChatTrace-ai/Searchkiller.git
+cd Searchkiller
+
+# 2. 安装依赖
+npm install
+
+# 3. 配置环境变量
+cp .env.example .env
+# 填入: GOOGLE_CLOUD_PROJECT, GOOGLE_VERTEX_PROJECT, GOOGLE_VERTEX_LOCATION,
+#       EXA_API_KEY, ES_CLOUD_ID, ES_API_KEY
+
+# 4. 启动开发服务器
+npm run dev
+
+# 5. 运行测试
+# 单元测试（无需 API Key）
+npx tsx tests/handoff.unit.test.ts
+npx tsx tests/sprint-contract.unit.test.ts
+
+# 集成测试（需要 Vertex AI Key）
+source .env
+npx tsx tests/llm-judge.integration.test.ts
+
+# 全管线测试（需要所有 Key）
+npx tsx tests/full-pipeline.integration.test.ts
+
+# 6. 验证仓库结构
+bash scripts/verify-dual-md.sh
+python scripts/lint-agent-md.py</code></pre>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="references">延伸阅读</h2>
+
+<table>
+  <tr><th>主题</th><th>文档</th></tr>
+  <tr><td>Harness 技术文档（含交互式图表）</td><td><a href="harness-engineering.html">harness-engineering.html</a></td></tr>
+  <tr><td>原始设计文档</td><td><a href="2026-06-07-g-rapid-agent-design.md">2026-06-07-g-rapid-agent-design.md</a></td></tr>
+  <tr><td>Cloud Run 部署指南</td><td><a href="cloud-run-deploy-guide.md">cloud-run-deploy-guide.md</a></td></tr>
+  <tr><td>GitHub Actions CI/CD</td><td><a href="github-actions-setup.md">github-actions-setup.md</a></td></tr>
+  <tr><td>系统清单（Agent 权限）</td><td><a href="../AGENTS.md">AGENTS.md</a></td></tr>
+</table>
+
+<hr>
+<p class="subtitle">Searchkiller Onboarding Guide v2.0 — 2026-06-10</p>
+
+</body>
+</html>
