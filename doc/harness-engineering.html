@@ -137,7 +137,125 @@
 
     a { color: var(--accent); }
     hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    /* ── Mermaid dark theme overrides ── */
+    .mermaid-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.2rem 0;
+      overflow-x: auto;
+    }
+    .mermaid-wrapper .caption {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      text-align: center;
+      margin-top: 0.8rem;
+      font-style: italic;
+    }
+
+    /* ── Scoring Gauge ── */
+    .gauge-row { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: 1rem 0; }
+    .gauge {
+      flex: 1; min-width: 220px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem;
+    }
+    .gauge-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .gauge-bar-bg {
+      height: 10px; background: rgba(255,255,255,0.06);
+      border-radius: 5px; position: relative; overflow: hidden;
+    }
+    .gauge-bar {
+      height: 100%; border-radius: 5px;
+      transition: width 0.8s ease;
+    }
+    .gauge-values {
+      display: flex; justify-content: space-between;
+      font-size: 0.78rem; margin-top: 0.3rem;
+    }
+    .gauge-values .hard { color: var(--red); }
+    .gauge-values .target { color: var(--green); }
+    .gauge-values .weight { color: var(--text-muted); }
+
+    /* ── Radar Chart (CSS) ── */
+    .radar-container {
+      display: flex; justify-content: center; align-items: center;
+      margin: 1.5rem 0; gap: 2rem; flex-wrap: wrap;
+    }
+    .radar-svg { max-width: 320px; }
+    .radar-legend { font-size: 0.85rem; }
+    .radar-legend dt { color: var(--accent); font-weight: 600; }
+    .radar-legend dd { color: var(--text-muted); margin: 0 0 0.5rem 0; }
+
+    /* ── Layer Stack ── */
+    .layer-stack { display: flex; flex-direction: column; gap: 2px; margin: 1.2rem 0; }
+    .layer {
+      display: flex; align-items: stretch; border-radius: 6px; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .layer-tag {
+      writing-mode: vertical-rl; text-orientation: mixed;
+      padding: 0.8rem 0.5rem; font-weight: 700; font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+      min-width: 36px; letter-spacing: 1px;
+    }
+    .layer-body { flex: 1; padding: 0.8rem 1rem; }
+    .layer-body h4 { margin: 0 0 0.3rem; font-size: 0.95rem; }
+    .layer-body .files { font-size: 0.82rem; color: var(--text-muted); }
+    .layer-body .rule { font-size: 0.8rem; margin-top: 0.3rem; }
+    .l0-bg { background: rgba(188,140,255,0.08); }
+    .l0-tag { background: rgba(188,140,255,0.25); color: var(--purple); }
+    .l1-bg { background: rgba(88,166,255,0.08); }
+    .l1-tag { background: rgba(88,166,255,0.25); color: var(--accent); }
+    .l3-bg { background: rgba(240,136,62,0.08); }
+    .l3-tag { background: rgba(240,136,62,0.25); color: var(--orange); }
+    .l2-bg { background: rgba(63,185,80,0.08); }
+    .l2-tag { background: rgba(63,185,80,0.25); color: var(--green); }
+    .arrow-down {
+      text-align: center; font-size: 1.2rem; color: var(--text-muted);
+      padding: 0.15rem 0; letter-spacing: 0.5rem;
+    }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; margin: 1.5rem 0 1.5rem 20px; padding-left: 24px;
+      border-left: 2px solid var(--border); }
+    .timeline-item { position: relative; margin-bottom: 1.2rem; }
+    .timeline-dot {
+      position: absolute; left: -31px; top: 4px; width: 14px; height: 14px;
+      border-radius: 50%; border: 2px solid var(--accent);
+      background: var(--bg);
+    }
+    .timeline-dot.active { background: var(--accent); }
+    .timeline-item h4 { font-size: 0.9rem; color: var(--accent); margin-bottom: 0.2rem; }
+    .timeline-item p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
   </style>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#1f6feb',
+        primaryTextColor: '#c9d1d9',
+        primaryBorderColor: '#58a6ff',
+        lineColor: '#58a6ff',
+        secondaryColor: '#161b22',
+        tertiaryColor: '#0d1117',
+        background: '#161b22',
+        mainBkg: '#161b22',
+        nodeBorder: '#30363d',
+        clusterBkg: '#161b22',
+        clusterBorder: '#30363d',
+        titleColor: '#c9d1d9',
+        edgeLabelBackground: '#161b22',
+        nodeTextColor: '#c9d1d9',
+      },
+      flowchart: { curve: 'basis', padding: 16 },
+      sequence: { mirrorActors: false },
+    });
+  </script>
 </head>
 <body>
 
@@ -155,6 +273,7 @@
     <li><a href="#scoring">6. 评分标准</a></li>
     <li><a href="#files">7. 文件存储协议</a></li>
     <li><a href="#testing">8. 测试</a></li>
+    <li><a href="#diagrams">9. 可视化图表</a></li>
   </ul>
 </div>
 
@@ -178,30 +297,43 @@
 
 <h2 id="architecture">2. 架构：4 层导入层级</h2>
 
-<div class="arch-diagram">
-<span class="badge badge-l0">L0</span> harness/           ← 通用框架（零外部依赖，任何项目可复用）
-    types.ts           IJudge, IReportGenerator 接口
-    handoff.ts         结构化 Handoff 协议
-    sprint-contract.ts Sprint 合约 + 4 维评分
-    feedback-loop.ts   迭代反馈循环引擎
-    index.ts           Barrel export
-       ↑ implements
-<span class="badge badge-l1">L1</span> agents/            ← Searchkiller 业务逻辑
-    evaluator/         确定性评估 + LLM-as-Judge (Gemini)
-    planner/           任务分解 + trace 追踪
-    recycle.ts         回收模式引擎
-    handoff.ts         re-export → harness/handoff
-    sprint-contract.ts re-export → harness/sprint-contract
-       ↑ adapts
-<span class="badge badge-l3">L3</span> lib/               ← 共享工具
-    harness-adapter.ts <span class="highlight">唯一桥接点：harness + agents</span>
-    gemini.ts          Vertex AI 模型
-    exa.ts / elasticsearch.ts  搜索引擎
-       ↑ uses
-<span class="badge badge-l2">L2</span> app/               ← 路由和页面
-    api/evaluate/      通过 lib/harness-adapter 调用
-    api/research/      通过 lib/ 直接调用
-    research/          前端 UI
+<!-- Interactive Layer Stack -->
+<div class="layer-stack">
+  <div class="layer l0-bg">
+    <div class="layer-tag l0-tag">L0</div>
+    <div class="layer-body">
+      <h4 style="color:var(--purple)">harness/ — 通用框架</h4>
+      <div class="files"><code>types.ts</code> · <code>handoff.ts</code> · <code>sprint-contract.ts</code> · <code>feedback-loop.ts</code> · <code>index.ts</code></div>
+      <div class="rule"><span class="ok">零外部依赖</span> — 任何项目可复用，定义 <code>IJudge</code> / <code>IReportGenerator</code> 接口</div>
+    </div>
+  </div>
+  <div class="arrow-down">▼ implements</div>
+  <div class="layer l1-bg">
+    <div class="layer-tag l1-tag">L1</div>
+    <div class="layer-body">
+      <h4 style="color:var(--accent)">agents/ — Searchkiller 业务逻辑</h4>
+      <div class="files"><code>evaluator/</code> (确定性评估 + LLM-Judge) · <code>planner/</code> (任务分解 + trace) · <code>recycle.ts</code></div>
+      <div class="rule"><code>handoff.ts</code> / <code>sprint-contract.ts</code> → <span class="warn">re-export from harness/</span></div>
+    </div>
+  </div>
+  <div class="arrow-down">▼ adapts</div>
+  <div class="layer l3-bg">
+    <div class="layer-tag l3-tag">L3</div>
+    <div class="layer-body">
+      <h4 style="color:var(--orange)">lib/ — 共享工具 + 桥接</h4>
+      <div class="files"><code>harness-adapter.ts</code> <strong class="highlight">（唯一桥接点）</strong> · <code>gemini.ts</code> · <code>exa.ts</code> · <code>elasticsearch.ts</code></div>
+      <div class="rule">将 <code>agents/</code> 实现注入 <code>harness/</code> 接口，对上层暴露统一 API</div>
+    </div>
+  </div>
+  <div class="arrow-down">▼ uses</div>
+  <div class="layer l2-bg">
+    <div class="layer-tag l2-tag">L2</div>
+    <div class="layer-body">
+      <h4 style="color:var(--green)">app/ — 路由 & 页面</h4>
+      <div class="files"><code>api/evaluate/</code> · <code>api/research/</code> · <code>research/</code> (前端 UI)</div>
+      <div class="rule"><span class="err">禁止</span> 直接 import <code>agents/</code> 或 <code>harness/</code> — 只能通过 <code>lib/harness-adapter</code></div>
+    </div>
+  </div>
 </div>
 
 <p><strong>关键规则</strong>：<code>app/</code> <span class="err">永远不直接 import</span> <code>agents/</code> 或 <code>harness/</code>。所有调用通过 <code>lib/harness-adapter.ts</code>。</p>
@@ -297,22 +429,55 @@ curl -X POST http://localhost:3000/api/evaluate \
 
 <h2 id="workflow">5. HITL 工作流</h2>
 
-<div class="arch-diagram">
-用户调用 start_loop(keyword)
-  │
-  ▼
-后端生成第1版报告 → LLM-as-Judge 评分 → 返回 {round:1, score, feedback}
-  │
-  ▼
-用户查看评分和反馈
-  ├── 满意 → <span class="ok">loop_approve(loopId)</span> → 标记 golden，结束
-  ├── 不满意 → loop_next(loopId, userFeedback?) → 生成第2版...
-  └── 放弃 → <span class="err">loop_cancel(loopId)</span> → 归档
-  
-循环终止条件：
-  • 用户 approve
-  • 评分达到 autoApproveScore（默认 8.5）→ 自动 approve
-  • 达到 maxRounds 上限（默认 10）→ 状态变为 expired
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+sequenceDiagram
+    actor User
+    participant API as /api/evaluate
+    participant Engine as FeedbackLoop
+    participant Gen as IReportGenerator
+    participant Judge as IJudge
+    participant Store as .agents/
+
+    User->>API: start_loop(keyword)
+    API->>Engine: startFeedbackLoop()
+    Engine->>Store: proposeContract → save
+    Engine->>Gen: generate(round 1)
+    Gen-->>Engine: report + sources
+    Engine->>Judge: evaluate(handoff)
+    Judge-->>Engine: scores + feedback
+    Engine->>Store: save handoff + loop state
+    Engine-->>API: {loop, round:1, score}
+    API-->>User: round 1 结果 + 评分
+
+    alt 用户满意
+        User->>API: loop_approve(loopId)
+        API->>Engine: approveLoop()
+        Engine->>Store: 标记 golden
+        Engine-->>User: ✅ APPROVED
+    else 需要改进
+        User->>API: loop_next(loopId, feedback?)
+        API->>Engine: nextRound(feedback)
+        Engine->>Gen: generate(round N, 含反馈)
+        Gen-->>Engine: 改进后的 report
+        Engine->>Judge: evaluate(handoff)
+        Judge-->>Engine: 新评分
+        Engine-->>User: round N 结果
+    else 放弃
+        User->>API: loop_cancel(loopId)
+        Engine->>Store: 归档
+        Engine-->>User: ❌ CANCELLED
+    end
+  </pre>
+  <div class="caption">图 5-1：HITL 反馈循环序列图</div>
+</div>
+
+<h3>循环终止条件</h3>
+<div class="grid-2">
+  <div class="card"><h4 class="ok">✓ 正常终止</h4><p>用户 <code>loop_approve</code></p></div>
+  <div class="card"><h4 class="ok">✓ 自动批准</h4><p>评分 ≥ <code>autoApproveScore</code> (8.5)</p></div>
+  <div class="card"><h4 class="warn">⚠ 到期</h4><p>达到 <code>maxRounds</code> (10)</p></div>
+  <div class="card"><h4 class="err">✗ 取消</h4><p>用户 <code>loop_cancel</code></p></div>
 </div>
 
 <h2 id="scoring">6. 评分标准</h2>
@@ -335,6 +500,68 @@ curl -X POST http://localhost:3000/api/evaluate \
   <tr><td>maxRounds</td><td>10</td><td>最大迭代轮数</td></tr>
   <tr><td>timeoutMinutes</td><td>30</td><td>超时自动归档</td></tr>
 </table>
+
+<h3>评分维度可视化</h3>
+
+<div class="gauge-row">
+  <div class="gauge">
+    <div class="gauge-label">事实准确性 <strong>factual_accuracy</strong></div>
+    <div class="gauge-bar-bg">
+      <div class="gauge-bar" style="width:75%; background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);"></div>
+    </div>
+    <div class="gauge-values">
+      <span class="hard">硬阈值 5.0</span>
+      <span class="target">目标 7.5</span>
+      <span class="weight">权重 30%</span>
+    </div>
+  </div>
+  <div class="gauge">
+    <div class="gauge-label">结构完整性 <strong>structural_completeness</strong></div>
+    <div class="gauge-bar-bg">
+      <div class="gauge-bar" style="width:70%; background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);"></div>
+    </div>
+    <div class="gauge-values">
+      <span class="hard">硬阈值 5.0</span>
+      <span class="target">目标 7.0</span>
+      <span class="weight">权重 25%</span>
+    </div>
+  </div>
+</div>
+<div class="gauge-row">
+  <div class="gauge">
+    <div class="gauge-label">分析深度 <strong>analysis_depth</strong></div>
+    <div class="gauge-bar-bg">
+      <div class="gauge-bar" style="width:70%; background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);"></div>
+    </div>
+    <div class="gauge-values">
+      <span class="hard">硬阈值 4.0</span>
+      <span class="target">目标 7.0</span>
+      <span class="weight">权重 25%</span>
+    </div>
+  </div>
+  <div class="gauge">
+    <div class="gauge-label">引用质量 <strong>citation_quality</strong></div>
+    <div class="gauge-bar-bg">
+      <div class="gauge-bar" style="width:65%; background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);"></div>
+    </div>
+    <div class="gauge-values">
+      <span class="hard">硬阈值 4.0</span>
+      <span class="target">目标 6.5</span>
+      <span class="weight">权重 20%</span>
+    </div>
+  </div>
+</div>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+pie title 评分权重分布
+    "事实准确性 (30%)" : 30
+    "结构完整性 (25%)" : 25
+    "分析深度 (25%)" : 25
+    "引用质量 (20%)" : 20
+  </pre>
+  <div class="caption">图 6-1：4 维评分权重饼图</div>
+</div>
 
 <p><strong>合约满足条件</strong>：所有硬阈值通过 <strong>且</strong> 加权总分 ≥ minWeightedScore。</p>
 
@@ -381,8 +608,261 @@ npx playwright test tests/evaluate.api.test.ts</code></pre>
 rg "import.*from.*@/agents" app/    # 应返回 0 结果
 rg "import.*from.*@/harness" app/   # 应返回 0 结果</code></pre>
 
+<h2 id="diagrams">9. 可视化图表</h2>
+
+<p>以下图表从不同维度描述 Harness 框架的结构和行为。</p>
+
+<!-- 9.1 组件关系类图 -->
+<h3>9.1 组件关系</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+classDiagram
+    class IJudge {
+        &lt;&lt;interface&gt;&gt;
+        +evaluate(handoff, dimensions) JudgeResult
+    }
+    class IReportGenerator {
+        &lt;&lt;interface&gt;&gt;
+        +generate(input) GenerationResult
+    }
+    class HandoffDocument {
+        +id: string
+        +phase: HandoffPhase
+        +input: HandoffInput
+        +output: HandoffOutput
+        +metrics: HandoffMetrics
+        +evaluation: HandoffEvaluation
+        +history: HandoffHistory[]
+    }
+    class SprintContract {
+        +id: string
+        +status: draft|active|completed
+        +dimensions: ScoreDimension[]
+        +globalThresholds: GlobalThresholds
+        +rounds: RoundRecord[]
+        +calculateScore(scores) number
+        +checkHardThresholds(scores) boolean
+    }
+    class FeedbackLoop {
+        +startFeedbackLoop(input, judge, generator)
+        +nextRound(loopId, judge, generator, feedback?)
+        +approveLoop(loopId)
+        +cancelLoop(loopId, reason?)
+    }
+    class SearchkillerJudge {
+        +evaluate(handoff, dimensions) JudgeResult
+    }
+
+    IJudge <|.. SearchkillerJudge : implements
+    FeedbackLoop --> IJudge : uses
+    FeedbackLoop --> IReportGenerator : uses
+    FeedbackLoop --> HandoffDocument : creates/updates
+    FeedbackLoop --> SprintContract : checks
+    SearchkillerJudge --> HandoffDocument : reads
+  </pre>
+  <div class="caption">图 9-1：核心组件类图 — 通过接口实现解耦</div>
+</div>
+
+<!-- 9.2 Handoff 状态机 -->
+<h3>9.2 Handoff 状态机</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+stateDiagram-v2
+    [*] --> created : createHandoffDocument()
+    created --> evaluated : recordEvaluation()
+    evaluated --> iterated : createIterationHandoff()
+    evaluated --> approved : approve (score ≥ threshold)
+    evaluated --> rejected : reject (below threshold)
+    iterated --> evaluated : recordEvaluation()
+    approved --> archived : resetContext()
+    rejected --> archived : resetContext()
+    archived --> [*]
+
+    state evaluated {
+        [*] --> scoring
+        scoring --> scored : IJudge.evaluate()
+        scored --> feedback_ready : format feedback
+    }
+  </pre>
+  <div class="caption">图 9-2：HandoffDocument 状态转换</div>
+</div>
+
+<!-- 9.3 Sprint Contract 生命周期 -->
+<h3>9.3 Sprint Contract 生命周期</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart LR
+    A[proposeContract] -->|系统提出默认| B{draft}
+    B -->|用户调整| C[adjustContract]
+    C --> B
+    B -->|锁定| D[activateContract]
+    D --> E{active}
+    E -->|每轮记录| F[recordRound]
+    F --> E
+    E -->|评分达标| G[completed ✅]
+    E -->|达到上限| H[expired ⚠]
+    E -->|用户取消| I[cancelled ❌]
+
+    style A fill:#1f6feb,color:#fff
+    style G fill:#238636,color:#fff
+    style H fill:#9e6a03,color:#fff
+    style I fill:#da3633,color:#fff
+  </pre>
+  <div class="caption">图 9-3：Sprint Contract 生命周期流程</div>
+</div>
+
+<!-- 9.4 数据流全景 -->
+<h3>9.4 端到端数据流</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart TB
+    subgraph User["👤 用户"]
+        U1[输入关键词]
+        U2[查看评分反馈]
+        U3[提供改进意见]
+    end
+
+    subgraph L2["L2 · app/"]
+        API["/api/evaluate<br/>POST action: start_loop"]
+    end
+
+    subgraph L3["L3 · lib/"]
+        Adapter["harness-adapter.ts<br/>桥接层"]
+    end
+
+    subgraph L1["L1 · agents/"]
+        Planner["planner/<br/>任务分解"]
+        Judge["llm-judge.ts<br/>Gemini Flash 评分"]
+    end
+
+    subgraph L0["L0 · harness/"]
+        Loop["feedback-loop.ts<br/>迭代引擎"]
+        Contract["sprint-contract.ts<br/>验收合约"]
+        Handoff["handoff.ts<br/>上下文传递"]
+    end
+
+    subgraph Storage[".agents/ 文件存储"]
+        S1["handoffs/*.json"]
+        S2["contracts/*.json"]
+        S3["loops/*.json"]
+        S4["golden/*.json"]
+    end
+
+    U1 --> API
+    API --> Adapter
+    Adapter --> Loop
+    Adapter -.->|注入实现| Judge
+    Adapter -.->|注入实现| Planner
+    Loop --> Contract
+    Loop --> Handoff
+    Loop --> Judge
+    Handoff --> S1
+    Contract --> S2
+    Loop --> S3
+    Loop -->|approve| S4
+    API --> U2
+    U3 --> API
+
+    style L0 fill:#1a1040,stroke:#bc8cff
+    style L1 fill:#0d1f3c,stroke:#58a6ff
+    style L3 fill:#1f1a0d,stroke:#f0883e
+    style L2 fill:#0d1f14,stroke:#3fb950
+  </pre>
+  <div class="caption">图 9-4：Harness 端到端数据流 — 从用户输入到文件存储</div>
+</div>
+
+<!-- 9.5 迭代改进时间线示例 -->
+<h3>9.5 典型迭代时间线</h3>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="timeline-dot active"></div>
+    <h4>Round 1 — 初始生成</h4>
+    <p>生成第一版报告 → 事实准确性 6.2 / 结构 5.8 / 深度 5.0 / 引用 4.5 → <strong style="color:var(--red)">加权 5.5</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot active"></div>
+    <h4>Round 2 — 用户反馈：增加引用</h4>
+    <p>改进引用来源 → 事实 6.8 / 结构 6.5 / 深度 5.5 / 引用 6.0 → <strong style="color:var(--yellow)">加权 6.3</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot active"></div>
+    <h4>Round 3 — 用户反馈：深化分析</h4>
+    <p>增加对比分析 → 事实 7.5 / 结构 7.0 / 深度 7.0 / 引用 6.8 → <strong style="color:var(--green)">加权 7.1 ✓</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <h4>Round 4 — 自动优化</h4>
+    <p>基于 Judge 反馈自动优化 → 事实 8.2 / 结构 8.0 / 深度 7.8 / 引用 7.5 → <strong style="color:var(--green)">加权 7.9</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot active" style="border-color:var(--green); background:var(--green);"></div>
+    <h4>Round 5 — 用户批准</h4>
+    <p>用户确认质量 → <code>loop_approve()</code> → 标记为 golden → <strong style="color:var(--green)">APPROVED ✓</strong></p>
+  </div>
+</div>
+
+<!-- 9.6 导入层级依赖矩阵 -->
+<h3>9.6 导入规则矩阵</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart LR
+    subgraph Rules["导入规则"]
+        direction TB
+        R1["✅ L0 → 无外部依赖"]
+        R2["✅ L1 → L0"]
+        R3["✅ L3 → L0 + L1"]
+        R4["✅ L2 → L3"]
+        R5["❌ L2 → L0 直接"]
+        R6["❌ L2 → L1 直接"]
+        R7["❌ L0 → L1"]
+        R8["❌ L1 → L2"]
+    end
+
+    style R1 fill:#238636,color:#fff
+    style R2 fill:#238636,color:#fff
+    style R3 fill:#238636,color:#fff
+    style R4 fill:#238636,color:#fff
+    style R5 fill:#da3633,color:#fff
+    style R6 fill:#da3633,color:#fff
+    style R7 fill:#da3633,color:#fff
+    style R8 fill:#da3633,color:#fff
+  </pre>
+  <div class="caption">图 9-6：4 层架构导入规则 — 绿色允许，红色禁止</div>
+</div>
+
+<!-- 9.7 评分决策树 -->
+<h3>9.7 评分决策流程</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart TD
+    A["IJudge.evaluate()"] --> B{"所有维度 ≥ 硬阈值?"}
+    B -->|否| C["❌ 硬阈值未通过<br/>contractMet = false"]
+    B -->|是| D["计算加权总分"]
+    D --> E{"加权分 ≥ minWeightedScore?"}
+    E -->|否| F["⚠ 加权分不足<br/>contractMet = false"]
+    E -->|是| G{"加权分 ≥ autoApproveScore?"}
+    G -->|是| H["✅ 自动批准<br/>phase → approved"]
+    G -->|否| I["✓ 合约满足<br/>等待用户决定"]
+    C --> J["提供改进建议<br/>继续下一轮"]
+    F --> J
+
+    style H fill:#238636,color:#fff
+    style C fill:#da3633,color:#fff
+    style F fill:#9e6a03,color:#fff
+    style I fill:#1f6feb,color:#fff
+  </pre>
+  <div class="caption">图 9-7：评分决策树 — 从 Judge 评分到最终判定</div>
+</div>
+
 <hr>
-<p class="subtitle">生成日期：2026-06-10 &mdash; Searchkiller Harness Engineering v2.0</p>
+<p class="subtitle">生成日期：2026-06-10 &mdash; Searchkiller Harness Engineering v2.1 (含可视化)</p>
 
 </body>
 </html>
