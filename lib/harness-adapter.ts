@@ -10,8 +10,11 @@
  * This file is the ONLY place where harness and agents are wired together.
  */
 
-import { generateText } from 'ai';
-import { proModel } from '@/lib/gemini';
+import { generateText, generateObject } from 'ai';
+import { z } from 'zod';
+import { proModel, flashModel } from '@/lib/gemini';
+import { semanticSearch } from '@/lib/exa';
+import { hybridSearch } from '@/lib/elasticsearch';
 import type { IJudge, IReportGenerator, JudgeResult, GenerationResult } from '@/harness/types';
 import type { HandoffDocument, ScoreDimension, HandoffSource } from '@/harness';
 
@@ -108,6 +111,68 @@ class SearchkillerReportGenerator implements IReportGenerator {
 }
 
 // ---------------------------------------------------------------------------
+// Search Integration — Exa + Elasticsearch
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate sub-queries for a keyword using Gemini Flash.
+ * Mirrors the production /api/plan route logic.
+ */
+export async function planSubQueries(keyword: string): Promise<string[]> {
+  const { object } = await generateObject({
+    model: flashModel,
+    schema: z.object({
+      subQueries: z.array(z.string()).min(3).max(5),
+    }),
+    system: `你是一个专业的查询规划器。将用户的研究关键词拆解为 3~5 个独立角度的子查询句。
+每个子查询应该：
+- 针对语义搜索引擎优化（完整句子而非关键字）
+- 覆盖不同维度（背景、技术、应用、趋势、挑战等）
+- 使用中英文混合（技术术语用英文）`,
+    prompt: `研究关键词: "${keyword}"`,
+    providerOptions: {
+      vertex: { thinkingConfig: { thinkingBudget: 0 } },
+    },
+  });
+  return object.subQueries;
+}
+
+/**
+ * Fetch real sources from Exa (neural) + Elasticsearch (hybrid).
+ * Maps Source (text) → HandoffSource (snippet) for the harness.
+ */
+export async function fetchSources(
+  keyword: string,
+  subQueries: string[],
+): Promise<HandoffSource[]> {
+  const [exaSources, esSources] = await Promise.all([
+    semanticSearch(subQueries).catch((err) => {
+      console.error('[harness-adapter] Exa search failed:', err?.message);
+      return [];
+    }),
+    hybridSearch(keyword).catch((err) => {
+      console.error('[harness-adapter] ES search failed:', err?.message);
+      return [];
+    }),
+  ]);
+
+  const seen = new Set<string>();
+  const sources: HandoffSource[] = [];
+
+  for (const s of [...exaSources, ...esSources]) {
+    if (seen.has(s.url)) continue;
+    seen.add(s.url);
+    sources.push({
+      title: s.title,
+      url: s.url,
+      snippet: s.text.substring(0, 3000),
+    });
+  }
+
+  return sources;
+}
+
+// ---------------------------------------------------------------------------
 // Singleton instances
 // ---------------------------------------------------------------------------
 
@@ -122,14 +187,39 @@ export { initializeEvaluator, loadConfig, isInitialized } from '@/agents/evaluat
 export { recycle, evaluateExisting, getRecycleStats } from '@/agents/recycle';
 export { loadLoop, listLoops, loopSummary } from '@/harness';
 
+/**
+ * Start a feedback loop. If sources/subQueries are not provided,
+ * auto-fetches them via Plan (Gemini Flash) + Fetch (Exa + ES).
+ */
 export async function startLoop(params: {
   keyword: string;
   subQueries?: string[];
   sources?: HandoffSource[];
   maxRounds?: number;
   contractOverrides?: Partial<SprintContract['globalThresholds']>;
+  skipSearch?: boolean;
 }): Promise<LoopNextResult> {
-  return harnessStartLoop({ ...params, judge, generator });
+  let { subQueries, sources } = params;
+
+  if (!params.skipSearch) {
+    if (!subQueries || subQueries.length === 0) {
+      subQueries = await planSubQueries(params.keyword);
+    }
+
+    if (!sources || sources.length === 0) {
+      sources = await fetchSources(params.keyword, subQueries);
+    }
+  }
+
+  return harnessStartLoop({
+    keyword: params.keyword,
+    subQueries,
+    sources,
+    maxRounds: params.maxRounds,
+    contractOverrides: params.contractOverrides,
+    judge,
+    generator,
+  });
 }
 
 export async function loopNext(loopId: string, userFeedback?: string): Promise<LoopNextResult> {
