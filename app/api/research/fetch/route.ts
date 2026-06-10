@@ -1,20 +1,7 @@
 import { semanticSearch } from '@/lib/exa';
 import { hybridSearch } from '@/lib/elasticsearch';
+import { contextCache } from '@/lib/context-cache';
 import type { ResearchContext } from '@/lib/schemas';
-
-const contextCache = new Map<string, ResearchContext>();
-
-// Auto-cleanup stale sessions (older than 30min)
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, ctx] of contextCache) {
-    if (now - ctx.createdAt > 30 * 60 * 1000) {
-      contextCache.delete(id);
-    }
-  }
-}, 5 * 60 * 1000);
-
-export { contextCache };
 
 export async function POST(req: Request) {
   const { keyword, subQueries } = await req.json();

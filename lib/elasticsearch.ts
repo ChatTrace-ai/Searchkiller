@@ -26,7 +26,24 @@ export async function hybridSearch(query: string): Promise<Source[]> {
       body: {
         size: 5,
         query: {
-          match: { content: { query } },
+          bool: {
+            should: [
+              { match: { content: { query, boost: 1.0 } } },
+              {
+                knn: {
+                  field: 'content_embedding',
+                  query_vector_builder: {
+                    text_embedding: {
+                      model_id: '.multilingual-e5-small',
+                      model_text: query,
+                    },
+                  },
+                  num_candidates: 50,
+                  boost: 2.0,
+                },
+              },
+            ],
+          },
         },
       },
     });

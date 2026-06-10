@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useChat } from 'ai/react';
-import { experimental_useObject as useObject } from 'ai/react';
 import { motion } from 'framer-motion';
 import { StreamingReport } from '@/components/StreamingReport';
 import { MindMap } from '@/components/MindMap';
 import { SourceCard } from '@/components/SourceCard';
 import { LoadingStates } from '@/components/LoadingStates';
-import { mindMapSchema } from '@/lib/schemas';
 
 type Phase = 'planning' | 'fetching' | 'streaming' | 'done';
 
@@ -18,12 +15,11 @@ interface Source {
   url: string;
 }
 
-export default function ResearchPage() {
+function ResearchContent() {
   const searchParams = useSearchParams();
   const keyword = searchParams.get('q') || '';
 
   const [phase, setPhase] = useState<Phase>('planning');
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [sources, setSources] = useState<Source[]>([]);
   const [reportContent, setReportContent] = useState('');
   const [mindMapData, setMindMapData] = useState<any>(null);
@@ -33,7 +29,6 @@ export default function ResearchPage() {
     if (!keyword) return;
 
     try {
-      // Phase 1: Plan
       setPhase('planning');
       const planRes = await fetch('/api/plan', {
         method: 'POST',
@@ -46,7 +41,6 @@ export default function ResearchPage() {
       }
       const { subQueries } = planBody;
 
-      // Phase 2: Fetch context
       setPhase('fetching');
       const fetchRes = await fetch('/api/research/fetch', {
         method: 'POST',
@@ -54,10 +48,8 @@ export default function ResearchPage() {
         body: JSON.stringify({ keyword, subQueries }),
       });
       const { sessionId: sid, sources: src } = await fetchRes.json();
-      setSessionId(sid);
       setSources(src);
 
-      // Phase 3: Start parallel streams
       setPhase('streaming');
       startStreams(sid);
     } catch (err: any) {
@@ -138,7 +130,6 @@ export default function ResearchPage() {
 
   return (
     <div className="h-screen flex flex-col bg-white">
-      {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
         <a href="/" className="text-google-blue font-semibold">Searchkiller</a>
         <span className="text-sm text-gray-600 truncate max-w-md">{keyword}</span>
@@ -156,9 +147,7 @@ export default function ResearchPage() {
         </div>
       </header>
 
-      {/* Main Content - Split View */}
       <main className="flex-1 flex overflow-hidden">
-        {/* Left: Report */}
         <div className="w-1/2 border-r border-gray-200 overflow-y-auto bg-white">
           <StreamingReport
             content={reportContent}
@@ -166,7 +155,6 @@ export default function ResearchPage() {
           />
         </div>
 
-        {/* Right: Mind Map */}
         <div className="w-1/2 overflow-hidden bg-zinc-50">
           <MindMap
             data={mindMapData}
@@ -175,8 +163,15 @@ export default function ResearchPage() {
         </div>
       </main>
 
-      {/* Footer: Sources */}
       <SourceCard sources={sources} />
     </div>
+  );
+}
+
+export default function ResearchPage() {
+  return (
+    <Suspense fallback={<LoadingStates />}>
+      <ResearchContent />
+    </Suspense>
   );
 }

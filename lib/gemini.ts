@@ -2,11 +2,8 @@ import { createVertex } from '@ai-sdk/google-vertex';
 import { createProxyFetch } from './proxy-fetch';
 
 const vertex = createVertex({
-  project: process.env.GOOGLE_VERTEX_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT,
-  location:
-    process.env.GOOGLE_VERTEX_LOCATION ??
-    process.env.GOOGLE_CLOUD_REGION ??
-    'global',
+  project: process.env.GOOGLE_VERTEX_PROJECT,
+  location: process.env.GOOGLE_VERTEX_LOCATION ?? 'global',
   fetch: createProxyFetch(),
 });
 

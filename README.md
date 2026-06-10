@@ -21,7 +21,7 @@ gcloud services enable aiplatform.googleapis.com
 
 # 4. Configure environment
 cp .env.example .env
-# Fill in: GOOGLE_CLOUD_PROJECT, EXA_API_KEY, ES_CLOUD_ID, ES_API_KEY
+# Fill in: GOOGLE_VERTEX_PROJECT, GOOGLE_VERTEX_LOCATION, EXA_API_KEY, ES_CLOUD_ID, ES_API_KEY
 
 # 5. Run development server
 npm run dev

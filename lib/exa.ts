@@ -1,9 +1,17 @@
 import Exa from 'exa-js';
 import type { Source } from './schemas';
 
-const exa = new Exa(process.env.EXA_API_KEY!);
+let _exa: Exa | null = null;
+
+function getExa(): Exa {
+  if (!_exa) {
+    _exa = new Exa(process.env.EXA_API_KEY!);
+  }
+  return _exa;
+}
 
 export async function semanticSearch(queries: string[]): Promise<Source[]> {
+  const exa = getExa();
   const results = await Promise.all(
     queries.map((q) =>
       exa.searchAndContents(q, {

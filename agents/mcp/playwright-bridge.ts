@@ -44,7 +44,7 @@ function runPlaywright(args: string[]): Promise<{ stdout: string; stderr: string
         resolve({
           stdout: stdout ?? '',
           stderr: stderr ?? '',
-          exitCode: error?.code ?? (proc.exitCode ?? 0),
+          exitCode: (typeof error?.code === 'number' ? error.code : proc.exitCode) ?? 0,
         });
       },
     );
