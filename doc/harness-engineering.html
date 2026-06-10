@@ -266,14 +266,13 @@
   <h4>目录</h4>
   <ul class="toc">
     <li><a href="#overview">1. 概述</a></li>
-    <li><a href="#architecture">2. 架构：4 层导入层级</a></li>
-    <li><a href="#components">3. 核心组件</a></li>
-    <li><a href="#api">4. API 参考</a></li>
-    <li><a href="#workflow">5. HITL 工作流</a></li>
-    <li><a href="#scoring">6. 评分标准</a></li>
+    <li><a href="#architecture">2. 架构全景</a></li>
+    <li><a href="#workflow">3. 工作流与迭代</a></li>
+    <li><a href="#scoring">4. 评分体系</a></li>
+    <li><a href="#components">5. 核心组件</a></li>
+    <li><a href="#api">6. API 参考</a></li>
     <li><a href="#files">7. 文件存储协议</a></li>
     <li><a href="#testing">8. 测试</a></li>
-    <li><a href="#diagrams">9. 可视化图表</a></li>
   </ul>
 </div>
 
@@ -295,7 +294,9 @@
   </div>
 </div>
 
-<h2 id="architecture">2. 架构：4 层导入层级</h2>
+<h2 id="architecture">2. 架构全景</h2>
+
+<h3>2.1 4 层导入层级</h3>
 
 <!-- Interactive Layer Stack -->
 <div class="layer-stack">
@@ -338,96 +339,149 @@
 
 <p><strong>关键规则</strong>：<code>app/</code> <span class="err">永远不直接 import</span> <code>agents/</code> 或 <code>harness/</code>。所有调用通过 <code>lib/harness-adapter.ts</code>。</p>
 
-<h2 id="components">3. 核心组件</h2>
+<h3>2.2 组件关系</h3>
 
-<h3>3.1 Handoff Protocol — <code>harness/handoff.ts</code></h3>
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+classDiagram
+    class IJudge {
+        &lt;&lt;interface&gt;&gt;
+        +evaluate(handoff, dimensions) JudgeResult
+    }
+    class IReportGenerator {
+        &lt;&lt;interface&gt;&gt;
+        +generate(input) GenerationResult
+    }
+    class HandoffDocument {
+        +id: string
+        +phase: HandoffPhase
+        +input: HandoffInput
+        +output: HandoffOutput
+        +metrics: HandoffMetrics
+        +evaluation: HandoffEvaluation
+        +history: HandoffHistory[]
+    }
+    class SprintContract {
+        +id: string
+        +status: draft|active|completed
+        +dimensions: ScoreDimension[]
+        +globalThresholds: GlobalThresholds
+        +rounds: RoundRecord[]
+        +calculateScore(scores) number
+        +checkHardThresholds(scores) boolean
+    }
+    class FeedbackLoop {
+        +startFeedbackLoop(input, judge, generator)
+        +nextRound(loopId, judge, generator, feedback?)
+        +approveLoop(loopId)
+        +cancelLoop(loopId, reason?)
+    }
+    class SearchkillerJudge {
+        +evaluate(handoff, dimensions) JudgeResult
+    }
 
-<p>Planner+Generator 和 Evaluator 之间的<strong>强类型合约</strong>。文件存储在 <code>.agents/handoffs/</code>。</p>
+    IJudge <|.. SearchkillerJudge : implements
+    FeedbackLoop --> IJudge : uses
+    FeedbackLoop --> IReportGenerator : uses
+    FeedbackLoop --> HandoffDocument : creates/updates
+    FeedbackLoop --> SprintContract : checks
+    SearchkillerJudge --> HandoffDocument : reads
+  </pre>
+  <div class="caption">图 2-1：核心组件类图 — 通过接口实现解耦</div>
+</div>
 
-<table>
-  <tr><th>接口</th><th>说明</th></tr>
-  <tr><td><code>HandoffDocument</code></td><td>核心文档：input (keyword, subQueries, userFeedback) + output (report, mindmap, sources) + metrics + evaluation + history</td></tr>
-  <tr><td><code>HandoffPhase</code></td><td>状态机：created → evaluated → iterated → approved/rejected → archived</td></tr>
-  <tr><td><code>createHandoffDocument()</code></td><td>创建新文档</td></tr>
-  <tr><td><code>createIterationHandoff(parentId, ...)</code></td><td>创建迭代版本（通过 parentId 形成版本链）</td></tr>
-  <tr><td><code>resetContext()</code></td><td>归档所有活跃 handoff，清空上下文</td></tr>
-</table>
+<h3>2.3 端到端数据流</h3>
 
-<h3>3.2 Sprint Contract — <code>harness/sprint-contract.ts</code></h3>
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart TB
+    subgraph User["👤 用户"]
+        U1[输入关键词]
+        U2[查看评分反馈]
+        U3[提供改进意见]
+    end
 
-<p>Anthropic 启发的 <strong>Sprint 合约模式</strong>：在开始工作前，协商明确的验收标准。</p>
+    subgraph L2["L2 · app/"]
+        API["/api/evaluate<br/>POST action: start_loop"]
+    end
 
-<div class="flow-step"><div class="flow-num">1</div><div><code>proposeContract(keyword)</code> — 系统提出默认合约</div></div>
-<div class="flow-step"><div class="flow-num">2</div><div><code>adjustContract(contract, adjustments)</code> — 用户调整维度/阈值</div></div>
-<div class="flow-step"><div class="flow-num">3</div><div><code>activateContract(contract)</code> — 锁定验收标准</div></div>
+    subgraph L3["L3 · lib/"]
+        Adapter["harness-adapter.ts<br/>桥接层"]
+    end
 
-<h3>3.3 LLM-as-Judge — <code>agents/evaluator/llm-judge.ts</code></h3>
+    subgraph L1["L1 · agents/"]
+        Planner["planner/<br/>任务分解"]
+        Judge["llm-judge.ts<br/>Gemini Flash 评分"]
+    end
 
-<p>Gemini Flash 驱动的<strong>结构化质量评分</strong>，实现 <code>IJudge</code> 接口。</p>
+    subgraph L0["L0 · harness/"]
+        Loop["feedback-loop.ts<br/>迭代引擎"]
+        Contract["sprint-contract.ts<br/>验收合约"]
+        Handoff["handoff.ts<br/>上下文传递"]
+    end
 
-<p>输出 Zod 验证的结构化 JSON：4 维分数 + 优点 + 不足 + 可执行改进建议。</p>
+    subgraph Storage[".agents/ 文件存储"]
+        S1["handoffs/*.json"]
+        S2["contracts/*.json"]
+        S3["loops/*.json"]
+        S4["golden/*.json"]
+    end
 
-<h3>3.4 Feedback Loop Engine — <code>harness/feedback-loop.ts</code></h3>
+    U1 --> API
+    API --> Adapter
+    Adapter --> Loop
+    Adapter -.->|注入实现| Judge
+    Adapter -.->|注入实现| Planner
+    Loop --> Contract
+    Loop --> Handoff
+    Loop --> Judge
+    Handoff --> S1
+    Contract --> S2
+    Loop --> S3
+    Loop -->|approve| S4
+    API --> U2
+    U3 --> API
 
-<p>整合 Handoff、Sprint Contract、IJudge 的<strong>完整迭代循环</strong>。通过<strong>依赖注入</strong>接收 Judge 和 Generator。</p>
+    style L0 fill:#1a1040,stroke:#bc8cff
+    style L1 fill:#0d1f3c,stroke:#58a6ff
+    style L3 fill:#1f1a0d,stroke:#f0883e
+    style L2 fill:#0d1f14,stroke:#3fb950
+  </pre>
+  <div class="caption">图 2-2：Harness 端到端数据流 — 从用户输入到文件存储</div>
+</div>
 
-<h2 id="api">4. API 参考</h2>
+<h3>2.4 导入规则矩阵</h3>
 
-<p>所有操作通过 <code>POST /api/evaluate</code>，以 <code>action</code> 字段区分：</p>
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart LR
+    subgraph Rules["导入规则"]
+        direction TB
+        R1["✅ L0 → 无外部依赖"]
+        R2["✅ L1 → L0"]
+        R3["✅ L3 → L0 + L1"]
+        R4["✅ L2 → L3"]
+        R5["❌ L2 → L0 直接"]
+        R6["❌ L2 → L1 直接"]
+        R7["❌ L0 → L1"]
+        R8["❌ L1 → L2"]
+    end
 
-<h3>原有 Actions（单次评估）</h3>
-<table>
-  <tr><th>Action</th><th>输入</th><th>说明</th></tr>
-  <tr><td><code>initialize</code></td><td><code>initialized_by, criteria, thresholds</code></td><td>HITL 初始化评估器</td></tr>
-  <tr><td><code>config</code></td><td>—</td><td>读取当前配置</td></tr>
-  <tr><td><code>evaluate</code></td><td><code>keyword, subQueries</code></td><td>单次自主评估</td></tr>
-  <tr><td><code>evaluate_trace</code></td><td><code>traceId</code></td><td>评估已有 trace</td></tr>
-  <tr><td><code>stats</code></td><td>—</td><td>系统统计</td></tr>
-</table>
+    style R1 fill:#238636,color:#fff
+    style R2 fill:#238636,color:#fff
+    style R3 fill:#238636,color:#fff
+    style R4 fill:#238636,color:#fff
+    style R5 fill:#da3633,color:#fff
+    style R6 fill:#da3633,color:#fff
+    style R7 fill:#da3633,color:#fff
+    style R8 fill:#da3633,color:#fff
+  </pre>
+  <div class="caption">图 2-3：4 层架构导入规则 — 绿色允许，红色禁止</div>
+</div>
 
-<h3>新增 Actions（反馈循环）</h3>
-<table>
-  <tr><th>Action</th><th>输入</th><th>输出</th></tr>
-  <tr><td><code>start_loop</code></td><td><code>{ keyword, subQueries?, sources?, maxRounds? }</code></td><td><code>{ loop, latestRound, sprintComplete }</code></td></tr>
-  <tr><td><code>loop_next</code></td><td><code>{ loopId, userFeedback? }</code></td><td><code>{ loop, latestRound, sprintComplete }</code></td></tr>
-  <tr><td><code>loop_approve</code></td><td><code>{ loopId }</code></td><td><code>{ status, loop, summary }</code></td></tr>
-  <tr><td><code>loop_cancel</code></td><td><code>{ loopId, reason? }</code></td><td><code>{ status, loop }</code></td></tr>
-  <tr><td><code>loop_status</code></td><td><code>{ loopId }</code></td><td><code>{ loop, summary }</code></td></tr>
-  <tr><td><code>loop_list</code></td><td>—</td><td><code>{ loops, count }</code></td></tr>
-</table>
+<h2 id="workflow">3. 工作流与迭代</h2>
 
-<h3>curl 示例</h3>
-
-<pre><code># 启动反馈循环
-curl -X POST http://localhost:3000/api/evaluate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "action": "start_loop",
-    "keyword": "AI Agent 架构趋势",
-    "subQueries": ["多Agent系统如何协作?", "Agent记忆机制有哪些?"],
-    "maxRounds": 10
-  }'
-
-# 查看循环状态
-curl -X POST http://localhost:3000/api/evaluate \
-  -H "Content-Type: application/json" \
-  -d '{"action": "loop_status", "loopId": "loop-xxx"}'
-
-# 下一轮迭代（带用户反馈）
-curl -X POST http://localhost:3000/api/evaluate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "action": "loop_next",
-    "loopId": "loop-xxx",
-    "userFeedback": "请增加对Agent安全性的分析"
-  }'
-
-# 批准当前最佳版本
-curl -X POST http://localhost:3000/api/evaluate \
-  -H "Content-Type: application/json" \
-  -d '{"action": "loop_approve", "loopId": "loop-xxx"}'</code></pre>
-
-<h2 id="workflow">5. HITL 工作流</h2>
+<h3>3.1 HITL 反馈循环</h3>
 
 <div class="mermaid-wrapper">
   <pre class="mermaid">
@@ -469,10 +523,10 @@ sequenceDiagram
         Engine-->>User: ❌ CANCELLED
     end
   </pre>
-  <div class="caption">图 5-1：HITL 反馈循环序列图</div>
+  <div class="caption">图 3-1：HITL 反馈循环序列图</div>
 </div>
 
-<h3>循环终止条件</h3>
+<h3>3.2 循环终止条件</h3>
 <div class="grid-2">
   <div class="card"><h4 class="ok">✓ 正常终止</h4><p>用户 <code>loop_approve</code></p></div>
   <div class="card"><h4 class="ok">✓ 自动批准</h4><p>评分 ≥ <code>autoApproveScore</code> (8.5)</p></div>
@@ -480,9 +534,87 @@ sequenceDiagram
   <div class="card"><h4 class="err">✗ 取消</h4><p>用户 <code>loop_cancel</code></p></div>
 </div>
 
-<h2 id="scoring">6. 评分标准</h2>
+<h3>3.3 Handoff 状态机</h3>
 
-<h3>4 维加权评分</h3>
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+stateDiagram-v2
+    [*] --> created : createHandoffDocument()
+    created --> evaluated : recordEvaluation()
+    evaluated --> iterated : createIterationHandoff()
+    evaluated --> approved : approve (score ≥ threshold)
+    evaluated --> rejected : reject (below threshold)
+    iterated --> evaluated : recordEvaluation()
+    approved --> archived : resetContext()
+    rejected --> archived : resetContext()
+    archived --> [*]
+
+    state evaluated {
+        [*] --> scoring
+        scoring --> scored : IJudge.evaluate()
+        scored --> feedback_ready : format feedback
+    }
+  </pre>
+  <div class="caption">图 3-2：HandoffDocument 状态转换</div>
+</div>
+
+<h3>3.4 Sprint Contract 生命周期</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart LR
+    A[proposeContract] -->|系统提出默认| B{draft}
+    B -->|用户调整| C[adjustContract]
+    C --> B
+    B -->|锁定| D[activateContract]
+    D --> E{active}
+    E -->|每轮记录| F[recordRound]
+    F --> E
+    E -->|评分达标| G[completed ✅]
+    E -->|达到上限| H[expired ⚠]
+    E -->|用户取消| I[cancelled ❌]
+
+    style A fill:#1f6feb,color:#fff
+    style G fill:#238636,color:#fff
+    style H fill:#9e6a03,color:#fff
+    style I fill:#da3633,color:#fff
+  </pre>
+  <div class="caption">图 3-3：Sprint Contract 生命周期流程</div>
+</div>
+
+<h3>3.5 典型迭代时间线</h3>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="timeline-dot active"></div>
+    <h4>Round 1 — 初始生成</h4>
+    <p>生成第一版报告 → 事实准确性 6.2 / 结构 5.8 / 深度 5.0 / 引用 4.5 → <strong style="color:var(--red)">加权 5.5</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot active"></div>
+    <h4>Round 2 — 用户反馈：增加引用</h4>
+    <p>改进引用来源 → 事实 6.8 / 结构 6.5 / 深度 5.5 / 引用 6.0 → <strong style="color:var(--yellow)">加权 6.3</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot active"></div>
+    <h4>Round 3 — 用户反馈：深化分析</h4>
+    <p>增加对比分析 → 事实 7.5 / 结构 7.0 / 深度 7.0 / 引用 6.8 → <strong style="color:var(--green)">加权 7.1 ✓</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <h4>Round 4 — 自动优化</h4>
+    <p>基于 Judge 反馈自动优化 → 事实 8.2 / 结构 8.0 / 深度 7.8 / 引用 7.5 → <strong style="color:var(--green)">加权 7.9</strong></p>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot active" style="border-color:var(--green); background:var(--green);"></div>
+    <h4>Round 5 — 用户批准</h4>
+    <p>用户确认质量 → <code>loop_approve()</code> → 标记为 golden → <strong style="color:var(--green)">APPROVED ✓</strong></p>
+  </div>
+</div>
+
+<h2 id="scoring">4. 评分体系</h2>
+
+<h3>4.1 4 维加权评分</h3>
 
 <table>
   <tr><th>维度</th><th>权重</th><th>硬阈值</th><th>目标</th><th>说明</th></tr>
@@ -492,16 +624,7 @@ sequenceDiagram
   <tr><td><strong>引用质量</strong><br>citation_quality</td><td>20%</td><td>4.0</td><td>6.5</td><td>引用充分、准确、来源可靠</td></tr>
 </table>
 
-<h3>全局阈值</h3>
-<table>
-  <tr><th>参数</th><th>默认值</th><th>说明</th></tr>
-  <tr><td>minWeightedScore</td><td>7.0</td><td>加权总分最低要求</td></tr>
-  <tr><td>autoApproveScore</td><td>8.5</td><td>达到此分数自动批准</td></tr>
-  <tr><td>maxRounds</td><td>10</td><td>最大迭代轮数</td></tr>
-  <tr><td>timeoutMinutes</td><td>30</td><td>超时自动归档</td></tr>
-</table>
-
-<h3>评分维度可视化</h3>
+<h3>4.2 评分维度可视化</h3>
 
 <div class="gauge-row">
   <div class="gauge">
@@ -560,10 +683,132 @@ pie title 评分权重分布
     "分析深度 (25%)" : 25
     "引用质量 (20%)" : 20
   </pre>
-  <div class="caption">图 6-1：4 维评分权重饼图</div>
+  <div class="caption">图 4-1：4 维评分权重饼图</div>
 </div>
 
+<h3>4.3 全局阈值</h3>
+<table>
+  <tr><th>参数</th><th>默认值</th><th>说明</th></tr>
+  <tr><td>minWeightedScore</td><td>7.0</td><td>加权总分最低要求</td></tr>
+  <tr><td>autoApproveScore</td><td>8.5</td><td>达到此分数自动批准</td></tr>
+  <tr><td>maxRounds</td><td>10</td><td>最大迭代轮数</td></tr>
+  <tr><td>timeoutMinutes</td><td>30</td><td>超时自动归档</td></tr>
+</table>
+
 <p><strong>合约满足条件</strong>：所有硬阈值通过 <strong>且</strong> 加权总分 ≥ minWeightedScore。</p>
+
+<h3>4.4 评分决策流程</h3>
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid">
+flowchart TD
+    A["IJudge.evaluate()"] --> B{"所有维度 ≥ 硬阈值?"}
+    B -->|否| C["❌ 硬阈值未通过<br/>contractMet = false"]
+    B -->|是| D["计算加权总分"]
+    D --> E{"加权分 ≥ minWeightedScore?"}
+    E -->|否| F["⚠ 加权分不足<br/>contractMet = false"]
+    E -->|是| G{"加权分 ≥ autoApproveScore?"}
+    G -->|是| H["✅ 自动批准<br/>phase → approved"]
+    G -->|否| I["✓ 合约满足<br/>等待用户决定"]
+    C --> J["提供改进建议<br/>继续下一轮"]
+    F --> J
+
+    style H fill:#238636,color:#fff
+    style C fill:#da3633,color:#fff
+    style F fill:#9e6a03,color:#fff
+    style I fill:#1f6feb,color:#fff
+  </pre>
+  <div class="caption">图 4-2：评分决策树 — 从 Judge 评分到最终判定</div>
+</div>
+
+<h2 id="components">5. 核心组件</h2>
+
+<h3>5.1 Handoff Protocol — <code>harness/handoff.ts</code></h3>
+
+<p>Planner+Generator 和 Evaluator 之间的<strong>强类型合约</strong>。文件存储在 <code>.agents/handoffs/</code>。</p>
+
+<table>
+  <tr><th>接口</th><th>说明</th></tr>
+  <tr><td><code>HandoffDocument</code></td><td>核心文档：input (keyword, subQueries, userFeedback) + output (report, mindmap, sources) + metrics + evaluation + history</td></tr>
+  <tr><td><code>HandoffPhase</code></td><td>状态机：created → evaluated → iterated → approved/rejected → archived</td></tr>
+  <tr><td><code>createHandoffDocument()</code></td><td>创建新文档</td></tr>
+  <tr><td><code>createIterationHandoff(parentId, ...)</code></td><td>创建迭代版本（通过 parentId 形成版本链）</td></tr>
+  <tr><td><code>resetContext()</code></td><td>归档所有活跃 handoff，清空上下文</td></tr>
+</table>
+
+<h3>5.2 Sprint Contract — <code>harness/sprint-contract.ts</code></h3>
+
+<p>Anthropic 启发的 <strong>Sprint 合约模式</strong>：在开始工作前，协商明确的验收标准。</p>
+
+<div class="flow-step"><div class="flow-num">1</div><div><code>proposeContract(keyword)</code> — 系统提出默认合约</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div><code>adjustContract(contract, adjustments)</code> — 用户调整维度/阈值</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div><code>activateContract(contract)</code> — 锁定验收标准</div></div>
+
+<h3>5.3 LLM-as-Judge — <code>agents/evaluator/llm-judge.ts</code></h3>
+
+<p>Gemini Flash 驱动的<strong>结构化质量评分</strong>，实现 <code>IJudge</code> 接口。</p>
+
+<p>输出 Zod 验证的结构化 JSON：4 维分数 + 优点 + 不足 + 可执行改进建议。</p>
+
+<h3>5.4 Feedback Loop Engine — <code>harness/feedback-loop.ts</code></h3>
+
+<p>整合 Handoff、Sprint Contract、IJudge 的<strong>完整迭代循环</strong>。通过<strong>依赖注入</strong>接收 Judge 和 Generator。</p>
+
+<h2 id="api">6. API 参考</h2>
+
+<p>所有操作通过 <code>POST /api/evaluate</code>，以 <code>action</code> 字段区分：</p>
+
+<h3>6.1 原有 Actions（单次评估）</h3>
+<table>
+  <tr><th>Action</th><th>输入</th><th>说明</th></tr>
+  <tr><td><code>initialize</code></td><td><code>initialized_by, criteria, thresholds</code></td><td>HITL 初始化评估器</td></tr>
+  <tr><td><code>config</code></td><td>—</td><td>读取当前配置</td></tr>
+  <tr><td><code>evaluate</code></td><td><code>keyword, subQueries</code></td><td>单次自主评估</td></tr>
+  <tr><td><code>evaluate_trace</code></td><td><code>traceId</code></td><td>评估已有 trace</td></tr>
+  <tr><td><code>stats</code></td><td>—</td><td>系统统计</td></tr>
+</table>
+
+<h3>6.2 新增 Actions（反馈循环）</h3>
+<table>
+  <tr><th>Action</th><th>输入</th><th>输出</th></tr>
+  <tr><td><code>start_loop</code></td><td><code>{ keyword, subQueries?, sources?, maxRounds? }</code></td><td><code>{ loop, latestRound, sprintComplete }</code></td></tr>
+  <tr><td><code>loop_next</code></td><td><code>{ loopId, userFeedback? }</code></td><td><code>{ loop, latestRound, sprintComplete }</code></td></tr>
+  <tr><td><code>loop_approve</code></td><td><code>{ loopId }</code></td><td><code>{ status, loop, summary }</code></td></tr>
+  <tr><td><code>loop_cancel</code></td><td><code>{ loopId, reason? }</code></td><td><code>{ status, loop }</code></td></tr>
+  <tr><td><code>loop_status</code></td><td><code>{ loopId }</code></td><td><code>{ loop, summary }</code></td></tr>
+  <tr><td><code>loop_list</code></td><td>—</td><td><code>{ loops, count }</code></td></tr>
+</table>
+
+<h3>6.3 curl 示例</h3>
+
+<pre><code># 启动反馈循环
+curl -X POST http://localhost:3000/api/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "start_loop",
+    "keyword": "AI Agent 架构趋势",
+    "subQueries": ["多Agent系统如何协作?", "Agent记忆机制有哪些?"],
+    "maxRounds": 10
+  }'
+
+# 查看循环状态
+curl -X POST http://localhost:3000/api/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"action": "loop_status", "loopId": "loop-xxx"}'
+
+# 下一轮迭代（带用户反馈）
+curl -X POST http://localhost:3000/api/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "loop_next",
+    "loopId": "loop-xxx",
+    "userFeedback": "请增加对Agent安全性的分析"
+  }'
+
+# 批准当前最佳版本
+curl -X POST http://localhost:3000/api/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"action": "loop_approve", "loopId": "loop-xxx"}'</code></pre>
 
 <h2 id="files">7. 文件存储协议</h2>
 
@@ -585,7 +830,7 @@ pie title 评分权重分布
 
 <h2 id="testing">8. 测试</h2>
 
-<h3>单元测试</h3>
+<h3>8.1 单元测试</h3>
 
 <pre><code># Handoff Protocol (7 tests)
 npx tsx tests/handoff.unit.test.ts
@@ -600,269 +845,16 @@ GOOGLE_VERTEX_LOCATION=us-central1 GOOGLE_VERTEX_PROJECT=dummy \
 # Playwright API tests (requires running server)
 npx playwright test tests/evaluate.api.test.ts</code></pre>
 
-<h3>Build 验证</h3>
+<h3>8.2 Build 验证</h3>
 <pre><code>npm run build</code></pre>
 
-<h3>解耦验证</h3>
+<h3>8.3 解耦验证</h3>
 <pre><code># 确认 app/ 不直接 import agents/ 或 harness/
 rg "import.*from.*@/agents" app/    # 应返回 0 结果
 rg "import.*from.*@/harness" app/   # 应返回 0 结果</code></pre>
 
-<h2 id="diagrams">9. 可视化图表</h2>
-
-<p>以下图表从不同维度描述 Harness 框架的结构和行为。</p>
-
-<!-- 9.1 组件关系类图 -->
-<h3>9.1 组件关系</h3>
-
-<div class="mermaid-wrapper">
-  <pre class="mermaid">
-classDiagram
-    class IJudge {
-        &lt;&lt;interface&gt;&gt;
-        +evaluate(handoff, dimensions) JudgeResult
-    }
-    class IReportGenerator {
-        &lt;&lt;interface&gt;&gt;
-        +generate(input) GenerationResult
-    }
-    class HandoffDocument {
-        +id: string
-        +phase: HandoffPhase
-        +input: HandoffInput
-        +output: HandoffOutput
-        +metrics: HandoffMetrics
-        +evaluation: HandoffEvaluation
-        +history: HandoffHistory[]
-    }
-    class SprintContract {
-        +id: string
-        +status: draft|active|completed
-        +dimensions: ScoreDimension[]
-        +globalThresholds: GlobalThresholds
-        +rounds: RoundRecord[]
-        +calculateScore(scores) number
-        +checkHardThresholds(scores) boolean
-    }
-    class FeedbackLoop {
-        +startFeedbackLoop(input, judge, generator)
-        +nextRound(loopId, judge, generator, feedback?)
-        +approveLoop(loopId)
-        +cancelLoop(loopId, reason?)
-    }
-    class SearchkillerJudge {
-        +evaluate(handoff, dimensions) JudgeResult
-    }
-
-    IJudge <|.. SearchkillerJudge : implements
-    FeedbackLoop --> IJudge : uses
-    FeedbackLoop --> IReportGenerator : uses
-    FeedbackLoop --> HandoffDocument : creates/updates
-    FeedbackLoop --> SprintContract : checks
-    SearchkillerJudge --> HandoffDocument : reads
-  </pre>
-  <div class="caption">图 9-1：核心组件类图 — 通过接口实现解耦</div>
-</div>
-
-<!-- 9.2 Handoff 状态机 -->
-<h3>9.2 Handoff 状态机</h3>
-
-<div class="mermaid-wrapper">
-  <pre class="mermaid">
-stateDiagram-v2
-    [*] --> created : createHandoffDocument()
-    created --> evaluated : recordEvaluation()
-    evaluated --> iterated : createIterationHandoff()
-    evaluated --> approved : approve (score ≥ threshold)
-    evaluated --> rejected : reject (below threshold)
-    iterated --> evaluated : recordEvaluation()
-    approved --> archived : resetContext()
-    rejected --> archived : resetContext()
-    archived --> [*]
-
-    state evaluated {
-        [*] --> scoring
-        scoring --> scored : IJudge.evaluate()
-        scored --> feedback_ready : format feedback
-    }
-  </pre>
-  <div class="caption">图 9-2：HandoffDocument 状态转换</div>
-</div>
-
-<!-- 9.3 Sprint Contract 生命周期 -->
-<h3>9.3 Sprint Contract 生命周期</h3>
-
-<div class="mermaid-wrapper">
-  <pre class="mermaid">
-flowchart LR
-    A[proposeContract] -->|系统提出默认| B{draft}
-    B -->|用户调整| C[adjustContract]
-    C --> B
-    B -->|锁定| D[activateContract]
-    D --> E{active}
-    E -->|每轮记录| F[recordRound]
-    F --> E
-    E -->|评分达标| G[completed ✅]
-    E -->|达到上限| H[expired ⚠]
-    E -->|用户取消| I[cancelled ❌]
-
-    style A fill:#1f6feb,color:#fff
-    style G fill:#238636,color:#fff
-    style H fill:#9e6a03,color:#fff
-    style I fill:#da3633,color:#fff
-  </pre>
-  <div class="caption">图 9-3：Sprint Contract 生命周期流程</div>
-</div>
-
-<!-- 9.4 数据流全景 -->
-<h3>9.4 端到端数据流</h3>
-
-<div class="mermaid-wrapper">
-  <pre class="mermaid">
-flowchart TB
-    subgraph User["👤 用户"]
-        U1[输入关键词]
-        U2[查看评分反馈]
-        U3[提供改进意见]
-    end
-
-    subgraph L2["L2 · app/"]
-        API["/api/evaluate<br/>POST action: start_loop"]
-    end
-
-    subgraph L3["L3 · lib/"]
-        Adapter["harness-adapter.ts<br/>桥接层"]
-    end
-
-    subgraph L1["L1 · agents/"]
-        Planner["planner/<br/>任务分解"]
-        Judge["llm-judge.ts<br/>Gemini Flash 评分"]
-    end
-
-    subgraph L0["L0 · harness/"]
-        Loop["feedback-loop.ts<br/>迭代引擎"]
-        Contract["sprint-contract.ts<br/>验收合约"]
-        Handoff["handoff.ts<br/>上下文传递"]
-    end
-
-    subgraph Storage[".agents/ 文件存储"]
-        S1["handoffs/*.json"]
-        S2["contracts/*.json"]
-        S3["loops/*.json"]
-        S4["golden/*.json"]
-    end
-
-    U1 --> API
-    API --> Adapter
-    Adapter --> Loop
-    Adapter -.->|注入实现| Judge
-    Adapter -.->|注入实现| Planner
-    Loop --> Contract
-    Loop --> Handoff
-    Loop --> Judge
-    Handoff --> S1
-    Contract --> S2
-    Loop --> S3
-    Loop -->|approve| S4
-    API --> U2
-    U3 --> API
-
-    style L0 fill:#1a1040,stroke:#bc8cff
-    style L1 fill:#0d1f3c,stroke:#58a6ff
-    style L3 fill:#1f1a0d,stroke:#f0883e
-    style L2 fill:#0d1f14,stroke:#3fb950
-  </pre>
-  <div class="caption">图 9-4：Harness 端到端数据流 — 从用户输入到文件存储</div>
-</div>
-
-<!-- 9.5 迭代改进时间线示例 -->
-<h3>9.5 典型迭代时间线</h3>
-
-<div class="timeline">
-  <div class="timeline-item">
-    <div class="timeline-dot active"></div>
-    <h4>Round 1 — 初始生成</h4>
-    <p>生成第一版报告 → 事实准确性 6.2 / 结构 5.8 / 深度 5.0 / 引用 4.5 → <strong style="color:var(--red)">加权 5.5</strong></p>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-dot active"></div>
-    <h4>Round 2 — 用户反馈：增加引用</h4>
-    <p>改进引用来源 → 事实 6.8 / 结构 6.5 / 深度 5.5 / 引用 6.0 → <strong style="color:var(--yellow)">加权 6.3</strong></p>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-dot active"></div>
-    <h4>Round 3 — 用户反馈：深化分析</h4>
-    <p>增加对比分析 → 事实 7.5 / 结构 7.0 / 深度 7.0 / 引用 6.8 → <strong style="color:var(--green)">加权 7.1 ✓</strong></p>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <h4>Round 4 — 自动优化</h4>
-    <p>基于 Judge 反馈自动优化 → 事实 8.2 / 结构 8.0 / 深度 7.8 / 引用 7.5 → <strong style="color:var(--green)">加权 7.9</strong></p>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-dot active" style="border-color:var(--green); background:var(--green);"></div>
-    <h4>Round 5 — 用户批准</h4>
-    <p>用户确认质量 → <code>loop_approve()</code> → 标记为 golden → <strong style="color:var(--green)">APPROVED ✓</strong></p>
-  </div>
-</div>
-
-<!-- 9.6 导入层级依赖矩阵 -->
-<h3>9.6 导入规则矩阵</h3>
-
-<div class="mermaid-wrapper">
-  <pre class="mermaid">
-flowchart LR
-    subgraph Rules["导入规则"]
-        direction TB
-        R1["✅ L0 → 无外部依赖"]
-        R2["✅ L1 → L0"]
-        R3["✅ L3 → L0 + L1"]
-        R4["✅ L2 → L3"]
-        R5["❌ L2 → L0 直接"]
-        R6["❌ L2 → L1 直接"]
-        R7["❌ L0 → L1"]
-        R8["❌ L1 → L2"]
-    end
-
-    style R1 fill:#238636,color:#fff
-    style R2 fill:#238636,color:#fff
-    style R3 fill:#238636,color:#fff
-    style R4 fill:#238636,color:#fff
-    style R5 fill:#da3633,color:#fff
-    style R6 fill:#da3633,color:#fff
-    style R7 fill:#da3633,color:#fff
-    style R8 fill:#da3633,color:#fff
-  </pre>
-  <div class="caption">图 9-6：4 层架构导入规则 — 绿色允许，红色禁止</div>
-</div>
-
-<!-- 9.7 评分决策树 -->
-<h3>9.7 评分决策流程</h3>
-
-<div class="mermaid-wrapper">
-  <pre class="mermaid">
-flowchart TD
-    A["IJudge.evaluate()"] --> B{"所有维度 ≥ 硬阈值?"}
-    B -->|否| C["❌ 硬阈值未通过<br/>contractMet = false"]
-    B -->|是| D["计算加权总分"]
-    D --> E{"加权分 ≥ minWeightedScore?"}
-    E -->|否| F["⚠ 加权分不足<br/>contractMet = false"]
-    E -->|是| G{"加权分 ≥ autoApproveScore?"}
-    G -->|是| H["✅ 自动批准<br/>phase → approved"]
-    G -->|否| I["✓ 合约满足<br/>等待用户决定"]
-    C --> J["提供改进建议<br/>继续下一轮"]
-    F --> J
-
-    style H fill:#238636,color:#fff
-    style C fill:#da3633,color:#fff
-    style F fill:#9e6a03,color:#fff
-    style I fill:#1f6feb,color:#fff
-  </pre>
-  <div class="caption">图 9-7：评分决策树 — 从 Judge 评分到最终判定</div>
-</div>
-
 <hr>
-<p class="subtitle">生成日期：2026-06-10 &mdash; Searchkiller Harness Engineering v2.1 (含可视化)</p>
+<p class="subtitle">生成日期：2026-06-10 &mdash; Searchkiller Harness Engineering v2.2</p>
 
 </body>
 </html>
