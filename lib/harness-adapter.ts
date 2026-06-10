@@ -10,6 +10,8 @@
  * This file is the ONLY place where harness and agents are wired together.
  */
 
+import { generateText } from 'ai';
+import { proModel } from '@/lib/gemini';
 import type { IJudge, IReportGenerator, JudgeResult, GenerationResult } from '@/harness/types';
 import type { HandoffDocument, ScoreDimension, HandoffSource } from '@/harness';
 
@@ -47,8 +49,16 @@ class SearchkillerJudge implements IJudge {
 }
 
 // ---------------------------------------------------------------------------
-// Searchkiller IReportGenerator implementation (placeholder)
+// Searchkiller IReportGenerator — real Gemini Pro generation
 // ---------------------------------------------------------------------------
+
+const REPORT_SYSTEM_PROMPT = `你是一个世界顶尖的行业分析专家。基于用户的研究关键词和提供的互联网实时抓取数据，
+输出一份结构严谨的 Markdown 研究报告。要求：
+1. 完全基于事实，不得捏造
+2. 使用清晰的 ## 标题结构（背景概述、关键发现、技术分析、趋势展望、结论）
+3. 每个观点标明来源编号 [#n]
+4. 中文为主，技术术语保留英文
+5. 总字数控制在 1500-3000 字`;
 
 class SearchkillerReportGenerator implements IReportGenerator {
   async generate(input: {
@@ -58,34 +68,40 @@ class SearchkillerReportGenerator implements IReportGenerator {
     previousFeedback?: string;
     userFeedback?: string;
   }): Promise<GenerationResult> {
-    const markdown = `## 关于"${input.keyword}"的研究报告
+    const t0 = Date.now();
 
-> 此为反馈循环引擎生成的占位报告。
+    const formattedContext = input.sources
+      .map((s, i) => `[文献源 #${i + 1}]\n标题: ${s.title}\n链接: ${s.url}\n内容:\n${s.snippet}`)
+      .join('\n\n');
 
-### 背景概述
-基于 ${input.sources.length} 个来源的分析。
+    let prompt = `研究关键词: "${input.keyword}"\n\n实时抓取数据:\n${formattedContext}`;
 
-### 关键发现
-${input.subQueries.map((q, i) => `${i + 1}. ${q}`).join('\n')}
+    if (input.previousFeedback) {
+      prompt += `\n\n## 上一轮评审反馈（请针对性改进）\n${input.previousFeedback}`;
+    }
+    if (input.userFeedback) {
+      prompt += `\n\n## 用户额外要求\n${input.userFeedback}`;
+    }
 
-### 结论
-待生成。
+    const { text } = await generateText({
+      model: proModel,
+      system: REPORT_SYSTEM_PROMPT,
+      prompt,
+    });
 
-${input.previousFeedback ? `\n### 基于评估反馈的改进\n${input.previousFeedback}` : ''}
-${input.userFeedback ? `\n### 基于用户反馈的改进\n${input.userFeedback}` : ''}`;
-
-    const reportMetrics = extractReportMetrics(markdown);
+    const reportDurationMs = Date.now() - t0;
+    const reportMetrics = extractReportMetrics(text);
 
     return {
-      report: { markdown, ...reportMetrics },
+      report: { markdown: text, ...reportMetrics },
       metrics: {
         planDurationMs: 0,
         fetchDurationMs: 0,
-        reportDurationMs: 0,
+        reportDurationMs,
         mindmapDurationMs: 0,
-        totalDurationMs: 0,
+        totalDurationMs: reportDurationMs,
         sourceCount: input.sources.length,
-        modelUsed: 'placeholder',
+        modelUsed: 'gemini-2.5-pro',
       },
     };
   }
