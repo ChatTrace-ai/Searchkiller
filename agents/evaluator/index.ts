@@ -2,6 +2,7 @@ import { readFile, writeFile, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import type { TraceRecord } from '../planner';
+import { loadHandoff, type HandoffDocument } from '../handoff';
 
 export type Verdict = 'APPROVED' | 'REJECTED';
 
@@ -63,6 +64,7 @@ export interface EvaluationRecord {
   root_cause?: string;
   lesson?: string;
   notes?: string;
+  handoffId?: string;
 }
 
 const AGENTS_DIR = join(process.cwd(), '.agents');
@@ -241,6 +243,9 @@ async function updateTraceVerdict(
  * Autonomously evaluate a trace using the HITL-initialized config.
  * No human gate — the verdict is determined entirely by the criteria
  * the human set during initialization.
+ *
+ * If the trace is linked to a HandoffDocument, the evaluation record
+ * includes the handoffId for structured context access.
  */
 export async function evaluate(traceId: string): Promise<EvaluationRecord> {
   const config = await loadConfig();
@@ -249,6 +254,15 @@ export async function evaluate(traceId: string): Promise<EvaluationRecord> {
   const trace = JSON.parse(await readFile(filepath, 'utf-8')) as TraceRecord;
 
   const checks = await runQualityChecks(trace, config);
+
+  let handoff: HandoffDocument | undefined;
+  if (trace.handoffId) {
+    try {
+      handoff = await loadHandoff(trace.handoffId);
+    } catch {
+      // Handoff not found — continue without it
+    }
+  }
 
   let verdict: Verdict;
   let rootCause: string | undefined;
@@ -281,6 +295,7 @@ export async function evaluate(traceId: string): Promise<EvaluationRecord> {
     config_snapshot: config.initialized_at,
     root_cause: rootCause,
     lesson,
+    handoffId: handoff?.id,
   };
 
   const targetDir = verdict === 'APPROVED' ? GOLDEN_DIR : FAILURES_DIR;

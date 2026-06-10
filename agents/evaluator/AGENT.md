@@ -7,9 +7,10 @@ Autonomous outcome judgment using HITL-initialized criteria.
 | File | Description |
 |------|-------------|
 | index.ts | Evaluator: initializeEvaluator (HITL), evaluate (autonomous), query utilities |
+| llm-judge.ts | LLM-as-Judge: Gemini-powered 4-dimension quality scoring with structured feedback |
 
 ## Boundaries
-- reads: .agents/traces/, .agents/golden/, .agents/failures/, .agents/evaluator-config.json
+- reads: .agents/traces/, .agents/golden/, .agents/failures/, .agents/evaluator-config.json, .agents/handoffs/
 - writes: .agents/golden/, .agents/failures/, .agents/traces/ (verdict update), .agents/evaluator-config.json
 - initialization: Human defines criteria via HITL → persisted config
 - runtime: Autonomous judgment against persisted config

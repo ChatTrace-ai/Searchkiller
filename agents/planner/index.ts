@@ -11,12 +11,14 @@ export interface TraceRecord {
   timestamp: string;
   verdict: 'PENDING' | 'APPROVED' | 'REJECTED';
   metadata?: Record<string, unknown>;
+  handoffId?: string;
 }
 
 export interface PlanResult {
   traceId: string;
   subQueries: string[];
   action: string;
+  handoffId?: string;
 }
 
 const TRACES_DIR = join(process.cwd(), '.agents', 'traces');
@@ -69,6 +71,7 @@ export async function listTraces(): Promise<string[]> {
 /**
  * Core planner function: decomposes a keyword into a traced execution plan.
  * Emits a trace with verdict=PENDING for the Evaluator to pick up.
+ * Optionally links to a HandoffDocument for structured context passing.
  */
 export async function plan(
   keyword: string,
@@ -79,6 +82,8 @@ export async function plan(
   const input = { keyword };
   const output = { subQueries };
 
+  const handoffId = meta?.handoffId as string | undefined;
+
   const trace = createTrace(action, input, output, {
     keyword,
     sub_queries: subQueries,
@@ -86,11 +91,16 @@ export async function plan(
     ...meta,
   });
 
+  if (handoffId) {
+    trace.handoffId = handoffId;
+  }
+
   await emitTrace(trace);
 
   return {
     traceId: trace.id,
     subQueries,
     action,
+    handoffId,
   };
 }
