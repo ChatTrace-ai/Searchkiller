@@ -46,6 +46,14 @@ export function MindMap({ data, isStreaming }: MindMapProps) {
     </g>
   ), []);
 
+  const toTreeData = useCallback((node: MindMapNode): any => ({
+    name: node.name,
+    attributes: node.attributes
+      ? { summary: node.attributes.summary ?? '', sources: (node.attributes.sources ?? []).join(', ') }
+      : undefined,
+    children: node.children?.map(toTreeData),
+  }), []);
+
   if (!data && !isStreaming) return null;
 
   if (!data && isStreaming) {
@@ -71,7 +79,7 @@ export function MindMap({ data, isStreaming }: MindMapProps) {
       transition={{ duration: 0.5 }}
     >
       <Tree
-        data={data!}
+        data={toTreeData(data!)}
         orientation="horizontal"
         pathFunc="step"
         translate={{ x: 80, y: 300 }}

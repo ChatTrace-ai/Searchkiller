@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { SearchInput } from '@/components/SearchInput';
@@ -8,6 +8,9 @@ import { SearchInput } from '@/components/SearchInput';
 export default function HomePage() {
   const router = useRouter();
   const [isSearching, setIsSearching] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const handleSearch = async (keyword: string) => {
     setIsSearching(true);
@@ -18,7 +21,7 @@ export default function HomePage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <motion.div
         className="text-center"
-        initial={{ opacity: 0, y: 20 }}
+        initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
@@ -32,7 +35,7 @@ export default function HomePage() {
 
       <motion.div
         className="w-full max-w-2xl"
-        initial={{ opacity: 0, y: 20 }}
+        initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
@@ -41,7 +44,7 @@ export default function HomePage() {
 
       <motion.div
         className="mt-8 flex flex-wrap gap-2 justify-center"
-        initial={{ opacity: 0 }}
+        initial={mounted ? { opacity: 0 } : false}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >

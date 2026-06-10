@@ -1,7 +1,7 @@
 import { streamObject } from 'ai';
 import { proModel } from '@/lib/gemini';
 import { mindMapSchema } from '@/lib/schemas';
-import { contextCache } from '../fetch/route';
+import { contextCache } from '@/lib/context-cache';
 
 export async function POST(req: Request) {
   const { sessionId } = await req.json();

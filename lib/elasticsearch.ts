@@ -1,15 +1,23 @@
 import { Client } from '@elastic/elasticsearch';
 import type { Source } from './schemas';
 
-const client = new Client({
-  cloud: { id: process.env.ES_CLOUD_ID! },
-  auth: { apiKey: process.env.ES_API_KEY! },
-});
+let _client: Client | null = null;
+
+function getClient(): Client {
+  if (!_client) {
+    _client = new Client({
+      cloud: { id: process.env.ES_CLOUD_ID! },
+      auth: { apiKey: process.env.ES_API_KEY! },
+    });
+  }
+  return _client;
+}
 
 const INDEX_NAME = 'research-docs';
 
 export async function hybridSearch(query: string): Promise<Source[]> {
   try {
+    const client = getClient();
     const response = await client.search({
       index: INDEX_NAME,
       body: {
