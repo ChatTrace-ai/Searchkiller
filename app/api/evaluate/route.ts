@@ -1,16 +1,37 @@
 import { NextResponse } from 'next/server';
-import { initializeEvaluator, loadConfig, isInitialized } from '@/agents/evaluator';
-import { recycle, evaluateExisting, getRecycleStats } from '@/agents/recycle';
+import {
+  initializeEvaluator,
+  loadConfig,
+  isInitialized,
+  recycle,
+  evaluateExisting,
+  getRecycleStats,
+  startLoop,
+  loopNext,
+  loopApprove,
+  loopCancel,
+  loadLoop,
+  loopSummary,
+  listLoops,
+} from '@/lib/harness-adapter';
 
 /**
  * POST /api/evaluate — Evaluator lifecycle endpoint
  *
  * Actions:
- *   initialize: (HITL) Human defines evaluation criteria/thresholds → persists config
- *   config:     Read current evaluator configuration
- *   evaluate:   Run autonomous evaluation on a new keyword (plan + evaluate)
+ *   initialize:     (HITL) Human defines evaluation criteria/thresholds → persists config
+ *   config:         Read current evaluator configuration
+ *   evaluate:       Run autonomous evaluation on a new keyword (plan + evaluate)
  *   evaluate_trace: Run autonomous evaluation on an existing trace
- *   stats:      Get recycle system summary
+ *   stats:          Get recycle system summary
+ *
+ * Feedback Loop Actions:
+ *   start_loop:     Start iterative feedback loop (generate + evaluate + HITL)
+ *   loop_next:      Execute next iteration round
+ *   loop_approve:   Approve current best version
+ *   loop_cancel:    Cancel active loop
+ *   loop_status:    Get loop state and history
+ *   loop_list:      List all loops
  */
 export async function POST(req: Request) {
   try {
@@ -75,8 +96,81 @@ export async function POST(req: Request) {
       return NextResponse.json(stats);
     }
 
+    // ── Feedback Loop Actions ──────────────────────────────────────────
+
+    if (action === 'start_loop') {
+      const { keyword, subQueries, sources, maxRounds, contractOverrides } = body;
+      if (!keyword) {
+        return NextResponse.json(
+          { error: 'keyword is required' },
+          { status: 400 },
+        );
+      }
+      const result = await startLoop({
+        keyword,
+        subQueries,
+        sources,
+        maxRounds,
+        contractOverrides,
+      });
+      return NextResponse.json(result);
+    }
+
+    if (action === 'loop_next') {
+      const { loopId, userFeedback } = body;
+      if (!loopId) {
+        return NextResponse.json(
+          { error: 'loopId is required' },
+          { status: 400 },
+        );
+      }
+      const result = await loopNext(loopId, userFeedback);
+      return NextResponse.json(result);
+    }
+
+    if (action === 'loop_approve') {
+      const { loopId } = body;
+      if (!loopId) {
+        return NextResponse.json(
+          { error: 'loopId is required' },
+          { status: 400 },
+        );
+      }
+      const loop = await loopApprove(loopId);
+      return NextResponse.json({ status: 'approved', loop, summary: loopSummary(loop) });
+    }
+
+    if (action === 'loop_cancel') {
+      const { loopId, reason } = body;
+      if (!loopId) {
+        return NextResponse.json(
+          { error: 'loopId is required' },
+          { status: 400 },
+        );
+      }
+      const loop = await loopCancel(loopId, reason);
+      return NextResponse.json({ status: 'cancelled', loop });
+    }
+
+    if (action === 'loop_status') {
+      const { loopId } = body;
+      if (!loopId) {
+        return NextResponse.json(
+          { error: 'loopId is required' },
+          { status: 400 },
+        );
+      }
+      const loop = await loadLoop(loopId);
+      return NextResponse.json({ loop, summary: loopSummary(loop) });
+    }
+
+    if (action === 'loop_list') {
+      const ids = await listLoops();
+      return NextResponse.json({ loops: ids, count: ids.length });
+    }
+
     return NextResponse.json(
-      { error: `Unknown action: ${action}. Use initialize, config, evaluate, evaluate_trace, or stats.` },
+      { error: `Unknown action: ${action}. Use initialize, config, evaluate, evaluate_trace, stats, start_loop, loop_next, loop_approve, loop_cancel, loop_status, or loop_list.` },
       { status: 400 },
     );
   } catch (err: unknown) {
