@@ -20,7 +20,7 @@ export function LoadingStates() {
             />
           ))}
         </div>
-        <p className="text-gray-400 text-sm">正在分析关键词并抓取数据...</p>
+        <p className="text-gray-600 text-sm">正在分析关键词并抓取数据...</p>
       </motion.div>
     </div>
   );

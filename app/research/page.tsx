@@ -40,7 +40,11 @@ export default function ResearchPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keyword }),
       });
-      const { subQueries } = await planRes.json();
+      const planBody = await planRes.json();
+      if (!planRes.ok) {
+        throw new Error(planBody.error || '查询规划失败');
+      }
+      const { subQueries } = planBody;
 
       // Phase 2: Fetch context
       setPhase('fetching');
@@ -62,15 +66,20 @@ export default function ResearchPage() {
   }, [keyword]);
 
   const startStreams = async (sid: string) => {
-    // Report stream
-    const reportRes = await fetch('/api/research/report', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: sid }),
-    });
-    const reportReader = reportRes.body?.getReader();
     const decoder = new TextDecoder();
-    if (reportReader) {
+
+    const streamReport = async () => {
+      const reportRes = await fetch('/api/research/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: sid }),
+      });
+      if (!reportRes.ok) {
+        throw new Error('报告生成失败');
+      }
+      const reportReader = reportRes.body?.getReader();
+      if (!reportReader) return;
+
       let text = '';
       while (true) {
         const { done, value } = await reportReader.read();
@@ -78,28 +87,33 @@ export default function ResearchPage() {
         text += decoder.decode(value, { stream: true });
         setReportContent(text);
       }
-    }
+    };
 
-    // Mindmap stream
-    const mapRes = await fetch('/api/research/mindmap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: sid }),
-    });
-    const mapReader = mapRes.body?.getReader();
-    if (mapReader) {
+    const streamMindmap = async () => {
+      const mapRes = await fetch('/api/research/mindmap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: sid }),
+      });
+      if (!mapRes.ok) {
+        throw new Error('思维导图生成失败');
+      }
+      const mapReader = mapRes.body?.getReader();
+      if (!mapReader) return;
+
       let json = '';
       while (true) {
         const { done, value } = await mapReader.read();
         if (done) break;
         json += decoder.decode(value, { stream: true });
-        try {
-          const parsed = JSON.parse(json);
-          setMindMapData(parsed);
-        } catch {}
       }
-    }
 
+      if (json) {
+        setMindMapData(JSON.parse(JSON.stringify(JSON.parse(json))));
+      }
+    };
+
+    await Promise.all([streamReport(), streamMindmap()]);
     setPhase('done');
   };
 
@@ -123,11 +137,11 @@ export default function ResearchPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-surface-200">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
         <a href="/" className="text-google-blue font-semibold">Searchkiller</a>
-        <span className="text-sm text-gray-400 truncate max-w-md">{keyword}</span>
+        <span className="text-sm text-gray-600 truncate max-w-md">{keyword}</span>
         <div className="flex items-center gap-2">
           {phase === 'streaming' && (
             <motion.div
@@ -145,7 +159,7 @@ export default function ResearchPage() {
       {/* Main Content - Split View */}
       <main className="flex-1 flex overflow-hidden">
         {/* Left: Report */}
-        <div className="w-1/2 border-r border-surface-200 overflow-y-auto">
+        <div className="w-1/2 border-r border-gray-200 overflow-y-auto bg-white">
           <StreamingReport
             content={reportContent}
             isStreaming={phase === 'streaming'}
@@ -153,7 +167,7 @@ export default function ResearchPage() {
         </div>
 
         {/* Right: Mind Map */}
-        <div className="w-1/2 overflow-hidden">
+        <div className="w-1/2 overflow-hidden bg-zinc-50">
           <MindMap
             data={mindMapData}
             isStreaming={phase === 'streaming'}

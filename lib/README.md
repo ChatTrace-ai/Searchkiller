@@ -6,7 +6,7 @@ Pure utility modules consumed by the application and agent layers.
 
 | Module | Description |
 |--------|-------------|
-| `gemini.ts` | Gemini Flash / Pro model instances via `@ai-sdk/google` |
+| `gemini.ts` | Vertex global: `gemini-3.1-flash-lite` (plan), `gemini-3.1-pro-preview` (report/mindmap) |
 | `exa.ts` | Exa.ai semantic search client |
 | `elasticsearch.ts` | Elasticsearch Serverless hybrid search (BM25 + kNN) |
 | `schemas.ts` | Zod schemas (`mindMapSchema`) and TypeScript interfaces (`Source`, `ResearchContext`, `MindMapNode`) |

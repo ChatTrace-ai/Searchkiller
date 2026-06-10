@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const mindMapSchema: z.ZodType<any> = z.object({
-  name: z.string().describe('思维导图核心节点名称'),
+  name: z.string().min(1).describe('思维导图核心节点名称'),
   children: z.array(z.lazy(() => mindMapSchema)).optional().describe('子分类节点'),
   attributes: z.object({
     summary: z.string().describe('对该节点主题的简短一句话分析或事实支撑'),

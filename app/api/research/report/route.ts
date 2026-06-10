@@ -22,5 +22,5 @@ export async function POST(req: Request) {
     prompt: `研究关键词: "${context.keyword}"\n\n实时抓取数据:\n${context.formattedContext}`,
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

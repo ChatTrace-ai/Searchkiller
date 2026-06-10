@@ -27,7 +27,7 @@ export function SearchInput({ onSearch, isLoading }: SearchInputProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="输入研究关键词，例如：Gemini 2.5 在医疗诊断中的多模态应用趋势"
-        className="w-full px-6 py-4 bg-surface-50 border border-surface-200 rounded-2xl text-white placeholder-gray-500 text-lg focus:outline-none focus:border-google-blue focus:ring-2 focus:ring-google-blue/20 transition-all"
+        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 text-lg focus:outline-none focus:border-google-blue focus:ring-2 focus:ring-google-blue/20 transition-all shadow-sm"
         disabled={isLoading}
       />
       <button

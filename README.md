@@ -14,11 +14,16 @@ cd Searchkiller
 # 2. Install dependencies
 npm install
 
-# 3. Configure environment
+# 3. Configure Google Cloud (Vertex AI — uses GCP credits, no API key)
+gcloud config set project YOUR_PROJECT_ID
+gcloud auth application-default login
+gcloud services enable aiplatform.googleapis.com
+
+# 4. Configure environment
 cp .env.example .env
 # Fill in: GOOGLE_CLOUD_PROJECT, EXA_API_KEY, ES_CLOUD_ID, ES_API_KEY
 
-# 4. Run development server
+# 5. Run development server
 npm run dev
 ```
 

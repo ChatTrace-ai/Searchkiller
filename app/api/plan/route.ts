@@ -9,18 +9,33 @@ export async function POST(req: Request) {
     return Response.json({ error: 'keyword is required' }, { status: 400 });
   }
 
-  const { object } = await generateObject({
-    model: flashModel,
-    schema: z.object({
-      subQueries: z.array(z.string()).min(3).max(5),
-    }),
-    system: `你是一个专业的查询规划器。将用户的研究关键词拆解为 3~5 个独立角度的子查询句。
+  try {
+    const { object } = await generateObject({
+      model: flashModel,
+      schema: z.object({
+        subQueries: z.array(z.string()).min(3).max(5),
+      }),
+      system: `你是一个专业的查询规划器。将用户的研究关键词拆解为 3~5 个独立角度的子查询句。
 每个子查询应该：
 - 针对语义搜索引擎优化（完整句子而非关键字）
 - 覆盖不同维度（背景、技术、应用、趋势、挑战等）
 - 使用中英文混合（技术术语用英文）`,
-    prompt: `研究关键词: "${keyword}"`,
-  });
+      prompt: `研究关键词: "${keyword}"`,
+    });
 
-  return Response.json(object);
+    return Response.json(object);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Plan failed';
+    const rateLimited =
+      message.includes('Resource exhausted') || message.includes('429');
+    console.error('Plan failed:', error);
+    return Response.json(
+      {
+        error: rateLimited
+          ? 'Vertex AI 请求过于频繁或配额不足，请稍后再试'
+          : message,
+      },
+      { status: rateLimited ? 429 : 500 },
+    );
+  }
 }
