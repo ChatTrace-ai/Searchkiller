@@ -11,7 +11,7 @@ Next.js Route Handlers for the research pipeline. All routes accept POST request
 | `/api/research/report` | `{sessionId}` | Streaming Markdown text |
 | `/api/research/mindmap` | `{sessionId}` | Streaming JSON (tree structure) |
 
-| `POST /api/evaluate` | `{action, ...}` | HITL evaluation (initiate/finalize/stats) |
+| `POST /api/evaluate` | `{action, ...}` | HITL evaluation (initialize/config/evaluate/evaluate_trace/stats) |
 
 ## Session Model
 

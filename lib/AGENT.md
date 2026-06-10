@@ -6,10 +6,11 @@ Pure shared utilities (L3 in permission hierarchy).
 ## Contents
 | File | Exports |
 |------|---------|
-| gemini.ts | flashModel, proModel |
-| exa.ts | exaClient, searchAndContents() |
-| elasticsearch.ts | esClient, hybridSearch() |
-| schemas.ts | mindMapSchema (Zod), MindMapNode, Source, ResearchContext |
+| gemini.ts | flashModel, proModel (via `@ai-sdk/google-vertex`) |
+| exa.ts | getExa() (lazy-init), searchAndContents() |
+| elasticsearch.ts | getClient() (lazy-init), hybridSearch() |
+| schemas.ts | mindMapSchema (Zod 4), MindMapNode, Source, ResearchContext |
+| context-cache.ts | contextCache (Map\<string, ResearchContext\>) |
 
 ## Boundaries
 - reads: NONE (leaf dependency)

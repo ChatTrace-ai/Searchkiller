@@ -62,11 +62,13 @@ python scripts/uniformize.py     # Auto-fix structural drift
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 15 (App Router, Edge Runtime) |
-| AI Models | Gemini 2.5 Pro / Flash via Vertex AI |
-| Web Search | Exa.ai semantic search |
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Runtime | React 19 + TypeScript 5.4 |
+| AI Models | Gemini 2.5 Pro / Flash via Vertex AI (`@ai-sdk/google-vertex`) |
+| AI SDK | Vercel AI SDK v6 (`ai@^6.0`) + Zod 4 |
+| Web Search | Exa.ai semantic search (`exa-js@^2.13`) |
 | Internal Search | Elasticsearch Serverless (BM25 + kNN) |
-| Visualization | react-d3-tree + Framer Motion |
+| Visualization | react-d3-tree + Framer Motion 12 |
 | Styling | TailwindCSS |
 | Deployment | Docker → GCP Cloud Run |
 
