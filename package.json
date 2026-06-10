@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --require ./scripts/proxy-preload.cjs ./node_modules/next/dist/bin/next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node --require ./scripts/proxy-preload.cjs ./node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "test:e2e": "playwright test",
     "test:api": "playwright test --project=api",
@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "^4.0.143",
-    "@elastic/elasticsearch": "^8.12.0",
     "ai": "^6.0.199",
     "exa-js": "^2.13.0",
     "framer-motion": "^12.40.0",

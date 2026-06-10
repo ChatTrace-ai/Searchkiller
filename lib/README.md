@@ -8,7 +8,7 @@ Pure utility modules consumed by the application and agent layers.
 |--------|-------------|
 | `gemini.ts` | Vertex global: `gemini-3.1-flash-lite` (plan), `gemini-3.1-pro-preview` (report/mindmap) |
 | `exa.ts` | Exa.ai semantic search client |
-| `elasticsearch.ts` | Elasticsearch Serverless hybrid search (BM25 + kNN) |
+| `elasticsearch.ts` | Elasticsearch Serverless hybrid search via REST (BM25 + kNN) |
 | `schemas.ts` | Zod schemas (`mindMapSchema`) and TypeScript interfaces (`Source`, `ResearchContext`, `MindMapNode`) |
 
 ## Design Constraints

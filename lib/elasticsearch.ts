@@ -1,29 +1,52 @@
-import { Client } from '@elastic/elasticsearch';
 import type { Source } from './schemas';
 
 const INDEX_NAME = 'research-docs';
 
-let client: Client | null | undefined;
+let esBaseUrl: string | null | undefined;
+let esApiKey: string | null | undefined;
 
-function getClient(): Client | null {
-  const cloudId = process.env.ES_CLOUD_ID;
-  const apiKey = process.env.ES_API_KEY;
-  if (!cloudId || !apiKey) return null;
+function parseCloudId(cloudId: string): string | null {
+  const separator = cloudId.indexOf(':');
+  if (separator === -1) return null;
 
-  return new Client({
-    cloud: { id: cloudId },
-    auth: { apiKey },
-  });
+  const encoded = cloudId.slice(separator + 1);
+  const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+  const [host] = decoded.split('$');
+  if (!host) return null;
+
+  return `https://${host}`;
+}
+
+function getEsConfig(): { baseUrl: string; apiKey: string } | null {
+  if (esBaseUrl === undefined) {
+    const cloudId = process.env.ES_CLOUD_ID;
+    const apiKey = process.env.ES_API_KEY;
+    if (!cloudId || !apiKey) {
+      esBaseUrl = null;
+      esApiKey = null;
+      return null;
+    }
+
+    esBaseUrl = parseCloudId(cloudId);
+    esApiKey = apiKey;
+  }
+
+  if (!esBaseUrl || !esApiKey) return null;
+  return { baseUrl: esBaseUrl, apiKey: esApiKey };
 }
 
 export async function hybridSearch(query: string): Promise<Source[]> {
-  if (client === undefined) client = getClient();
-  if (!client) return [];
+  const config = getEsConfig();
+  if (!config) return [];
 
   try {
-    const response = await client.search({
-      index: INDEX_NAME,
-      body: {
+    const response = await fetch(`${config.baseUrl}/${INDEX_NAME}/_search`, {
+      method: 'POST',
+      headers: {
+        Authorization: `ApiKey ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         size: 5,
         query: {
           bool: {
@@ -45,10 +68,26 @@ export async function hybridSearch(query: string): Promise<Source[]> {
             ],
           },
         },
-      },
+      }),
     });
 
-    return (response.hits.hits || []).map((hit: any) => ({
+    if (!response.ok) {
+      const body = await response.text();
+      if (body.includes('index_not_found_exception')) {
+        console.warn(
+          `ES index "${INDEX_NAME}" not found — run: node --env-file=.env scripts/setup-elasticsearch-index.mjs`,
+        );
+      } else {
+        console.error('ES search failed:', response.status, body);
+      }
+      return [];
+    }
+
+    const data = (await response.json()) as {
+      hits?: { hits?: Array<{ _source?: Record<string, string> }> };
+    };
+
+    return (data.hits?.hits || []).map((hit) => ({
       title: hit._source?.title || 'Internal Doc',
       url: hit._source?.url || '#internal',
       text: (hit._source?.content || '').substring(0, 2000),
