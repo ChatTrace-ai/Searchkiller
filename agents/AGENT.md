@@ -1,24 +1,25 @@
 # agents/ — Agent Manifest
 
 ## Role
-Multi-agent orchestration layer (L1 in permission hierarchy).
+Multi-agent orchestration layer (L1 in permission hierarchy). Implements harness interfaces.
 
 ## Contents
 | Path | Description |
 |------|-------------|
 | planner/ | Task decomposition + trace emission |
-| evaluator/ | HITL-initialized autonomous judgment + recycle pattern routing |
+| evaluator/ | HITL-initialized autonomous judgment + recycle routing |
+| evaluator/llm-judge.ts | LLM-as-Judge: Gemini Flash 4-dim scoring (thinkingBudget=0, ~4s) |
 | mcp/ | MCP bridges (Playwright test runner) |
 | recycle.ts | Recycle pattern engine (plan → evaluate → route) |
-| handoff.ts | Structured Handoff Protocol — typed contract between Planner+Generator and Evaluator |
-| sprint-contract.ts | Sprint Contract — negotiated acceptance criteria with 4-dim scoring |
-| feedback-loop.ts | Feedback Loop Engine — integrates handoff, contract, and LLM-Judge into iterative HITL loop |
+| handoff.ts | Re-export from harness/handoff.ts |
+| sprint-contract.ts | Re-export from harness/sprint-contract.ts |
+| feedback-loop.ts | Legacy feedback loop (use harness/feedback-loop.ts via lib/harness-adapter.ts instead) |
 
 ## Boundaries
-- reads: app/, lib/, .agents/schemas/, .agents/traces/, .agents/golden/, .agents/failures/, .agents/handoffs/
-- writes: .agents/traces/, .agents/golden/, .agents/failures/, .agents/handoffs/, .agents/contracts/, .agents/loops/
-- imports_from: lib/ (L3)
-- NEVER imported by: app/, components/
+- reads: lib/ (L3), harness/ (L0)
+- writes: .agents/traces/, .agents/golden/, .agents/failures/
+- imports_from: lib/ (L3), harness/ (L0 — via re-exports)
+- NEVER imported by: app/ (use lib/harness-adapter.ts instead)
 
 ## Permission Level
-L1-agents: orchestration logic; reads L2+, writes .agents/
+L1-agents: implements harness interfaces; orchestration logic

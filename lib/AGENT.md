@@ -1,22 +1,24 @@
 # lib/ — Agent Manifest
 
 ## Role
-Pure shared utilities (L3 in permission hierarchy).
+Shared utilities and harness adapter (L3 in permission hierarchy).
 
 ## Contents
 | File | Exports |
 |------|---------|
 | gemini.ts | flashModel, proModel (via `@ai-sdk/google-vertex`) |
-| exa.ts | getExa() (lazy-init), searchAndContents() |
+| exa.ts | getExa() (lazy-init), semanticSearch() |
 | elasticsearch.ts | getClient() (lazy-init), hybridSearch() |
 | schemas.ts | mindMapSchema (Zod 4), MindMapNode, Source, ResearchContext |
 | context-cache.ts | contextCache (Map\<string, ResearchContext\>) |
+| harness-adapter.ts | SearchkillerJudge, SearchkillerReportGenerator, planSubQueries, fetchSources, startLoop, loopNext, loopApprove, loopCancel |
 
 ## Boundaries
-- reads: NONE (leaf dependency)
-- writes: NONE
+- reads: NONE (leaf dependency, except harness-adapter which bridges L0+L1)
+- writes: NONE (except harness-adapter → .agents/)
 - imported_by: app/api/*, agents/*
-- NEVER imports from: app/, components/, agents/
+- harness-adapter.ts: ONLY file that imports from both harness/ and agents/
+- NEVER imports from: app/, components/
 
 ## Permission Level
-L3-lib: pure utilities; ZERO side effects; no upward imports
+L3-lib: pure utilities; harness-adapter is the sole bridge between L0 (harness) and L1 (agents)

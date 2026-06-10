@@ -38,12 +38,24 @@ User keyword
 
 ## Multi-Agent System
 
-Searchkiller uses a **Planner + Evaluator** dual-agent architecture:
+Searchkiller uses a **Planner + Evaluator** dual-agent architecture with a **Harness Framework** for iterative quality improvement:
 
 - **Planner**: Decomposes tasks, generates execution traces, orchestrates the research pipeline.
-- **Evaluator (HITL)**: Judges execution outcomes with mandatory human-in-the-loop approval before finalizing any evaluation state.
+- **Evaluator (HITL)**: Judges execution outcomes with mandatory human-in-the-loop approval.
+- **Harness Framework**: 4-layer decoupled architecture for iterative feedback loops.
 
-See [AGENTS.md](AGENTS.md) for the full system manifest.
+### Harness Pipeline (Full-Auto)
+
+```
+keyword → Plan (Flash, 6s) → Fetch (Exa+ES, 1s) → Generate (Pro, 72s) → Judge (Flash, 5s) → score
+                                                                              ↓
+                                               iterate with feedback ← FAIL (score < threshold)
+                                               approve + archive    ← PASS (score >= threshold)
+```
+
+**Components**: Handoff Protocol | Sprint Contract | LLM-as-Judge | Feedback Loop Engine
+
+See [doc/harness-engineering.html](doc/harness-engineering.html) for the full technical documentation with interactive diagrams.
 
 ## Repository as Trace System
 
@@ -82,15 +94,17 @@ bash scripts/worktree-new.sh my-feature
 
 ## Directory Overview
 
-| Directory | Purpose |
-|-----------|---------|
-| `app/` | Next.js pages and API routes |
-| `components/` | React UI components |
-| `lib/` | Shared utilities (Gemini, Exa, ES clients, schemas) |
-| `agents/` | Planner + Evaluator agent logic |
-| `.agents/` | Runtime trace store (schemas, golden benchmarks, failures) |
-| `scripts/` | SSOT verification and automation tools |
-| `doc/` | Read-only external reference material |
+| Directory | Layer | Purpose |
+|-----------|-------|---------|
+| `harness/` | L0 | Generic feedback loop framework (IJudge, IReportGenerator interfaces) |
+| `agents/` | L1 | Planner + Evaluator + LLM-Judge (implements harness interfaces) |
+| `app/` | L2 | Next.js pages and API routes |
+| `lib/` | L3 | Shared utilities + harness adapter (sole bridge between L0 and L1) |
+| `components/` | — | React UI components |
+| `.agents/` | — | Runtime file store (handoffs, contracts, loops, traces) |
+| `tests/` | — | Unit, integration, and E2E pipeline tests |
+| `scripts/` | — | SSOT verification and automation tools |
+| `doc/` | — | Technical documentation (harness-engineering.html) |
 
 ## License
 
