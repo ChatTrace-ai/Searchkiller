@@ -10,9 +10,9 @@
  * This file is the ONLY place where harness and agents are wired together.
  */
 
-import { generateText, generateObject } from 'ai';
 import { z } from 'zod';
 import { proModel, flashModel } from '@/lib/gemini';
+import { safeGenerateText, safeGenerateObject } from '@/lib/gemini-client';
 import { semanticSearch } from '@/lib/exa';
 import { hybridSearch } from '@/lib/elasticsearch';
 import type { IJudge, IReportGenerator, JudgeResult, GenerationResult } from '@/harness/types';
@@ -133,11 +133,11 @@ class SearchkillerReportGenerator implements IReportGenerator {
       prompt += `\n\n## 用户额外要求\n${input.userFeedback}`;
     }
 
-    const { text } = await generateText({
+    const { text } = await safeGenerateText({
       model: proModel,
       system: REPORT_SYSTEM_PROMPT,
       prompt,
-    });
+    }, { timeoutMs: 180_000, label: 'harness-report' });
 
     const reportDurationMs = Date.now() - t0;
     const reportMetrics = extractReportMetrics(text);
@@ -166,7 +166,7 @@ class SearchkillerReportGenerator implements IReportGenerator {
  * Mirrors the production /api/plan route logic.
  */
 export async function planSubQueries(keyword: string): Promise<string[]> {
-  const { object } = await generateObject({
+  const result = await safeGenerateObject({
     model: flashModel,
     schema: z.object({
       subQueries: z.array(z.string()).min(3).max(5),
@@ -181,7 +181,7 @@ export async function planSubQueries(keyword: string): Promise<string[]> {
       vertex: { thinkingConfig: { thinkingBudget: 0 } },
     },
   });
-  return object.subQueries;
+  return (result.object as { subQueries: string[] }).subQueries;
 }
 
 /**

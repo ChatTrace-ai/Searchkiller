@@ -1,14 +1,7 @@
-import { generateObject } from 'ai';
 import { z } from 'zod';
-import pLimit from 'p-limit';
 import { flashModel } from './gemini';
+import { safeGenerateObject } from './gemini-client';
 import type { Source, KnowledgeEntry } from './schemas';
-
-const MAX_CONCURRENT = 3;
-const MAX_RETRIES = 3;
-const BASE_BACKOFF_MS = 1500;
-
-const limit = pLimit(MAX_CONCURRENT);
 
 export type ExtractionErrorClass = 'rate_limit' | 'schema_validation' | 'timeout' | 'api_error' | 'empty_source';
 
@@ -34,10 +27,6 @@ const KnowledgeSchema = z.object({
 
 type ExtractedKnowledge = Omit<KnowledgeEntry, 'project_id' | 'created_at'>;
 
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function sanitizeInput(text: string, maxLen = 3000): string {
   const cleaned = text
     .replace(/\s+/g, ' ')
@@ -50,7 +39,7 @@ export async function extractKnowledge(source: Source): Promise<ExtractedKnowled
   const content = sanitizeInput(source.text);
   const inputText = `Title: ${source.title}\nURL: ${source.url}\n\nContent:\n${content}`;
 
-  const { object } = await generateObject({
+  const result = await safeGenerateObject({
     model: flashModel,
     schema: KnowledgeSchema,
     system: `Extract structured knowledge from the given source. Rules:
@@ -63,28 +52,25 @@ Be factual. Output in English. If content is too short or unclear, still produce
     providerOptions: {
       vertex: { thinkingConfig: { thinkingBudget: 0 } },
     },
-  });
+  }, { label: 'knowledge-extract' });
 
+  const obj = result.object as z.infer<typeof KnowledgeSchema>;
   return {
-    topic: object.topic,
-    facts: object.facts || [],
-    entities: object.entities || [],
+    topic: obj.topic,
+    facts: obj.facts || [],
+    entities: obj.entities || [],
     source_url: source.url,
     source_title: source.title,
-    raw_summary: object.raw_summary,
+    raw_summary: obj.raw_summary,
   };
 }
 
-function classifyError(error: any): ExtractionErrorClass {
-  const status = error?.status ?? error?.statusCode;
-  if (status === 429 || error?.code === 'RATE_LIMIT_EXCEEDED') return 'rate_limit';
-  if (error?.name === 'ZodError' || error?.message?.includes('validation')) return 'schema_validation';
-  if (error?.code === 'ETIMEDOUT' || error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) return 'timeout';
+function classifyExtractionError(error: any): ExtractionErrorClass {
+  const cls = error?.geminiErrorClass;
+  if (cls === 'rate_limit') return 'rate_limit';
+  if (cls === 'timeout') return 'timeout';
+  if (cls === 'validation') return 'schema_validation';
   return 'api_error';
-}
-
-function isRetryable(errorClass: ExtractionErrorClass): boolean {
-  return errorClass === 'rate_limit' || errorClass === 'schema_validation' || errorClass === 'timeout';
 }
 
 interface ExtractResult {
@@ -92,33 +78,18 @@ interface ExtractResult {
   errorClass?: ExtractionErrorClass;
 }
 
-async function extractWithRetry(source: Source): Promise<ExtractResult> {
+async function extractSafe(source: Source): Promise<ExtractResult> {
   const sanitized = sanitizeInput(source.text || '');
   if (sanitized.length < 50) {
     return { data: null, errorClass: 'empty_source' };
   }
 
-  let lastErrorClass: ExtractionErrorClass = 'api_error';
-
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const data = await extractKnowledge(source);
-      return { data };
-    } catch (error: any) {
-      lastErrorClass = classifyError(error);
-
-      if (!isRetryable(lastErrorClass) && attempt > 0) {
-        return { data: null, errorClass: lastErrorClass };
-      }
-
-      if (attempt < MAX_RETRIES - 1) {
-        const jitter = Math.random() * 500;
-        const backoff = BASE_BACKOFF_MS * Math.pow(2, attempt) + jitter;
-        await sleep(backoff);
-      }
-    }
+  try {
+    const data = await extractKnowledge(source);
+    return { data };
+  } catch (error: any) {
+    return { data: null, errorClass: classifyExtractionError(error) };
   }
-  return { data: null, errorClass: lastErrorClass };
 }
 
 export async function extractKnowledgeBatch(
@@ -133,7 +104,7 @@ export async function extractKnowledgeBatch(
   };
 
   const extractResults = await Promise.all(
-    sources.map((source) => limit(() => extractWithRetry(source))),
+    sources.map((source) => extractSafe(source)),
   );
 
   const results = extractResults.map((r) => {

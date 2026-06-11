@@ -16,9 +16,9 @@
  *   4. citation_quality (20%) — sufficient, accurate, reliable citations
  */
 
-import { generateObject } from 'ai';
 import { z } from 'zod';
 import { flashModel } from '@/lib/gemini';
+import { safeGenerateObject } from '@/lib/gemini-client';
 import type { ScoreDimension } from '../sprint-contract';
 import type { HandoffDocument } from '../handoff';
 
@@ -99,7 +99,7 @@ export async function runLLMJudge(
   const prompt = buildJudgePrompt(handoff, dimensions);
   const t0 = Date.now();
 
-  const { object } = await generateObject({
+  const result = await safeGenerateObject({
     model: flashModel,
     schema: evaluationOutputSchema,
     system: 'Research report quality evaluator. Score strictly, provide actionable feedback in Chinese (Simplified). Output structured JSON.',
@@ -116,7 +116,7 @@ export async function runLLMJudge(
     (globalThis as Record<string, unknown>).__lastJudgeMs = elapsed;
   }
 
-  return object;
+  return result.object as LLMJudgeResult;
 }
 
 /**

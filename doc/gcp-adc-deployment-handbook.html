@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G-RapidAgent — GCP ADC 认证与部署手册</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-light: #60a5fa;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --code-bg: #0d1117;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.4rem; margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.15rem; margin: 1.5rem 0 0.75rem; color: var(--accent-light); }
+    p, li { margin-bottom: 0.5rem; }
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      background: var(--code-bg);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      font-size: 0.88em;
+      line-height: 1.5;
+      position: relative;
+    }
+    pre code { background: none; padding: 0; }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    .copy-btn:hover { background: var(--accent); color: #fff; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .badge-required { background: #7f1d1d; color: #fca5a5; }
+    .badge-recommended { background: #713f12; color: #fde68a; }
+    .badge-optional { background: #14532d; color: #86efac; }
+
+    /* Accordion */
+    .accordion { margin: 0.75rem 0; }
+    .accordion-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: var(--surface-hover); }
+    .accordion-header .arrow {
+      transition: transform 0.2s;
+      font-size: 0.8em;
+      color: var(--text-muted);
+    }
+    .accordion.open .arrow { transform: rotate(90deg); }
+    .accordion-body {
+      display: none;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      background: var(--surface);
+    }
+    .accordion.open .accordion-body { display: block; }
+
+    /* Stepper */
+    .stepper { counter-reset: step; }
+    .step {
+      position: relative;
+      padding: 1rem 1rem 1rem 3.5rem;
+      margin-bottom: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 1rem;
+      top: 1rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85em;
+    }
+    .step.done::before { background: var(--success); content: '✓'; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+    th, td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      text-align: left;
+      font-size: 0.9em;
+    }
+    th { background: var(--surface); color: var(--accent-light); font-weight: 600; }
+    td { background: var(--surface); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-top: 1rem; }
+    .tab {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 0.9em;
+      color: var(--text-muted);
+    }
+    .tab:first-child { border-radius: 8px 0 0 0; }
+    .tab:last-child { border-radius: 0 8px 0 0; }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tab-content { display: none; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; }
+    .tab-content.active { display: block; }
+
+    .callout {
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      border-left: 4px solid;
+    }
+    .callout-info { background: #172554; border-color: var(--accent); }
+    .callout-warning { background: #422006; border-color: var(--warning); }
+    .callout-success { background: #052e16; border-color: var(--success); }
+    .callout-danger { background: #450a0a; border-color: var(--error); }
+
+    .header-meta { color: var(--text-muted); font-size: 0.9em; margin-bottom: 2rem; }
+    .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+    .toc ul { list-style: none; padding-left: 1rem; }
+    .toc > ul { padding-left: 0; }
+    .toc li { margin: 0.3rem 0; }
+    .toc a { color: var(--text-muted); }
+    .toc a:hover { color: var(--accent-light); }
+    .arch-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      font-family: monospace;
+      font-size: 0.85em;
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<h1>G-RapidAgent — GCP ADC 认证与部署手册</h1>
+<div class="header-meta">
+  版本 1.0 &middot; 生成于 2026-06-11 &middot; 适用于 <code>@ai-sdk/google-vertex ^4.0.143</code>
+</div>
+
+<nav class="toc">
+  <strong>目录</strong>
+  <ul>
+    <li><a href="#arch">一、架构总览</a></li>
+    <li><a href="#adc">二、ADC 认证配置</a>
+      <ul>
+        <li><a href="#adc-local">本地开发</a></li>
+        <li><a href="#adc-cloudrun">Cloud Run 生产</a></li>
+      </ul>
+    </li>
+    <li><a href="#gemini">三、Gemini API 弹性层</a></li>
+    <li><a href="#deploy">四、一键部署流程</a></li>
+    <li><a href="#quota">五、配额与限流指南</a></li>
+    <li><a href="#troubleshoot">六、故障排除</a></li>
+    <li><a href="#files">七、变更文件清单</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="arch">一、架构总览</h2>
+
+<div class="arch-diagram">
+┌──────────────────────────────────────────────────────────┐
+│              G-RapidAgent on GCP                         │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  [GitHub Actions] ─WIF─→ [Cloud Build] → [Artifact Reg] │
+│                                              │           │
+│                                              ▼           │
+│                                       [Cloud Run]        │
+│                                     Next.js SSR          │
+│                                     port:8080            │
+│                                     mem:1Gi cpu:2        │
+│                                     min:1 max:10         │
+│                                     timeout:300s         │
+│                                          │               │
+│                    ┌─────────────────────┼───────┐       │
+│                    ▼                     ▼       ▼       │
+│             [Vertex AI]          [Secret Mgr] [IAM]      │
+│            ┌─────────────┐                               │
+│            │ Flash (2.5)  │  ← plan, extract, judge      │
+│            │ Pro   (2.5)  │  ← report, mindmap           │
+│            └─────────────┘                               │
+│                                                          │
+│  外部依赖:                                               │
+│  • Exa.ai (语义搜索)                                    │
+│  • Elastic Cloud (知识缓存 + 预测存储)                  │
+└──────────────────────────────────────────────────────────┘
+</div>
+
+<h3>GCP 服务清单</h3>
+<table>
+  <tr><th>服务</th><th>用途</th><th>认证方式</th></tr>
+  <tr><td>Vertex AI (Gemini 2.5 Flash/Pro)</td><td>核心 AI 推理</td><td>ADC (Application Default Credentials)</td></tr>
+  <tr><td>Cloud Run</td><td>应用托管</td><td>服务账号</td></tr>
+  <tr><td>Artifact Registry</td><td>Docker 镜像</td><td>gcloud auth / WIF</td></tr>
+  <tr><td>Cloud Build</td><td>CI/CD 构建</td><td>gcloud auth / WIF</td></tr>
+  <tr><td>Secret Manager</td><td>API 密钥存储 (Exa, ES)</td><td>IAM roles/secretmanager.secretAccessor</td></tr>
+  <tr><td>IAM + WIF</td><td>GitHub Actions 认证</td><td>Workload Identity Federation</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="adc">二、ADC 认证配置</h2>
+
+<div class="callout callout-info">
+  <strong>核心原则：</strong>不需要 API Key。本项目通过 <code>@ai-sdk/google-vertex</code> 使用 <strong>Application Default Credentials (ADC)</strong>。本地和 Cloud Run 上代码完全一致，零密钥管理。
+</div>
+
+<div class="tabs" data-group="adc">
+  <div class="tab active" onclick="switchTab(this, 'adc-local-tab')">本地开发</div>
+  <div class="tab" onclick="switchTab(this, 'adc-cloudrun-tab')">Cloud Run</div>
+  <div class="tab" onclick="switchTab(this, 'adc-code-tab')">代码实现</div>
+</div>
+
+<div id="adc-local-tab" class="tab-content active" data-group="adc">
+  <h3 id="adc-local">本地开发环境配置</h3>
+  <div class="stepper">
+    <div class="step">
+      <strong>获取临时本地凭据</strong>
+      <pre><code>gcloud auth application-default login</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+      <p>这会在 <code>~/.config/gcloud/application_default_credentials.json</code> 创建临时凭据文件。SDK 自动读取此文件，无需手动指定路径。</p>
+    </div>
+    <div class="step">
+      <strong>配置 .env 文件</strong>
+      <pre><code># .env — 只需项目 ID 和区域，不需要 API Key
+GOOGLE_VERTEX_PROJECT=your-gcp-project-id
+GOOGLE_VERTEX_LOCATION=us-central1
+
+# 其他服务
+EXA_API_KEY=your-exa-key
+ES_CLOUD_ID=your-es-cloud-id
+ES_API_KEY=your-es-api-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+    </div>
+    <div class="step">
+      <strong>验证配置</strong>
+      <pre><code># 测试 ADC 是否生效
+gcloud ai endpoints list --region=us-central1 \
+  --project=your-gcp-project-id
+
+# 或直接测试 API
+npm run dev
+curl -X POST http://localhost:3000/api/plan \
+  -H "Content-Type: application/json" \
+  -d '{"keyword": "test query"}'</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+    </div>
+  </div>
+  <div class="callout callout-success">
+    <strong>优势：</strong>
+    <ul>
+      <li>绕过"禁止创建 API 密钥"的组织策略限制</li>
+      <li>无长期有效密钥字符串泄露风险</li>
+      <li>本地与 Cloud Run 代码行为完全一致</li>
+    </ul>
+  </div>
+</div>
+
+<div id="adc-cloudrun-tab" class="tab-content" data-group="adc">
+  <h3 id="adc-cloudrun">Cloud Run 生产环境</h3>
+  <div class="stepper">
+    <div class="step">
+      <strong>创建专用服务账号</strong>
+      <pre><code>gcloud iam service-accounts create g-rapid-agent-sa \
+  --display-name="G-RapidAgent Cloud Run SA" \
+  --project=YOUR_PROJECT_ID</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+    </div>
+    <div class="step">
+      <strong>授予最小权限</strong>
+      <pre><code>SA=g-rapid-agent-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+
+# Vertex AI 调用权限
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$SA" \
+  --role="roles/aiplatform.user"
+
+# Secret Manager 读取权限
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$SA" \
+  --role="roles/secretmanager.secretAccessor"
+
+# 日志和监控
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$SA" \
+  --role="roles/logging.logWriter"
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$SA" \
+  --role="roles/monitoring.metricWriter"</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+    </div>
+    <div class="step">
+      <strong>部署时指定服务账号</strong>
+      <pre><code>gcloud run deploy g-rapid-agent \
+  --service-account=g-rapid-agent-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID,GOOGLE_CLOUD_REGION=us-central1" \
+  ...</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+      <p>Cloud Run 容器内的 <code>google-auth-library</code> 会自动从 metadata server 获取服务账号凭据。</p>
+    </div>
+  </div>
+</div>
+
+<div id="adc-code-tab" class="tab-content" data-group="adc">
+  <h3>代码实现 — lib/gemini.ts</h3>
+  <pre><code>import { createVertex } from '@ai-sdk/google-vertex';
+
+// SDK 自动从 ADC 获取凭据:
+//   本地: ~/.config/gcloud/application_default_credentials.json
+//   Cloud Run: metadata server (服务账号)
+const vertex = createVertex({
+  project: process.env.GOOGLE_VERTEX_PROJECT,
+  location: process.env.GOOGLE_VERTEX_LOCATION,
+});
+
+export const flashModel = vertex('gemini-2.5-flash');
+export const proModel = vertex('gemini-2.5-pro');</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+  <div class="callout callout-warning">
+    <strong>注意：</strong>不要使用 <code>GOOGLE_APPLICATION_CREDENTIALS</code> 环境变量指向 JSON Key 文件。ADC 自动检测机制更安全，且与 Cloud Run 兼容。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="gemini">三、Gemini API 弹性层</h2>
+
+<p>新增的 <code>lib/gemini-client.ts</code> 为所有 Gemini 调用提供统一的重试、并发控制和错误处理。</p>
+
+<table>
+  <tr><th>能力</th><th>配置</th><th>说明</th></tr>
+  <tr><td>指数退避重试</td><td>base=1500ms, max=3次, +jitter</td><td>429/503/timeout 自动重试</td></tr>
+  <tr><td>Flash 并发限制</td><td>p-limit(5)</td><td>最多 5 个 Flash 请求同时进行</td></tr>
+  <tr><td>Pro 并发限制</td><td>p-limit(2)</td><td>Pro 有 10 QPM 硬限制，严格限流</td></tr>
+  <tr><td>generateObject 超时</td><td>30s</td><td>Plan、Analysis、Judge 等</td></tr>
+  <tr><td>generateText 超时</td><td>120s (Harness: 180s)</td><td>Pro 报告生成较慢</td></tr>
+  <tr><td>错误分类</td><td>6 类</td><td>rate_limit / timeout / server_error / auth_error / validation / unknown</td></tr>
+</table>
+
+<div class="accordion" onclick="toggleAccordion(this)">
+  <div class="accordion-header">
+    <span class="arrow">▶</span>
+    <strong>迁移覆盖的全部 7 个调用点</strong>
+  </div>
+  <div class="accordion-body">
+    <table>
+      <tr><th>文件</th><th>旧 API</th><th>新 API</th><th>错误处理</th></tr>
+      <tr><td><code>app/api/plan/route.ts</code></td><td>generateObject</td><td>safeGenerateObject</td><td>429 → RATE_LIMITED, 503</td></tr>
+      <tr><td><code>app/api/research/report/route.ts</code></td><td>streamText</td><td>safeStreamText</td><td>429 / 503</td></tr>
+      <tr><td><code>app/api/research/mindmap/route.ts</code></td><td>streamObject</td><td>safeStreamObject</td><td>429 / 503</td></tr>
+      <tr><td><code>lib/prediction-generator.ts</code></td><td>generateObject ×2</td><td>safeGenerateObject</td><td>fallback 内容</td></tr>
+      <tr><td><code>lib/harness-adapter.ts</code></td><td>generateText + generateObject</td><td>safeGenerateText + safeGenerateObject</td><td>继承 wrapper</td></tr>
+      <tr><td><code>agents/evaluator/llm-judge.ts</code></td><td>generateObject</td><td>safeGenerateObject</td><td>继承 wrapper</td></tr>
+      <tr><td><code>lib/knowledge-extractor.ts</code></td><td>generateObject + 自有重试</td><td>safeGenerateObject (统一)</td><td>错误诊断</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="deploy">四、一键部署流程</h2>
+
+<div class="callout callout-info">
+  使用 <code>scripts/setup-gcp.sh</code> 一键完成从零到部署。
+</div>
+
+<div class="stepper">
+  <div class="step">
+    <strong>前置条件</strong>
+    <pre><code># 安装 gcloud CLI
+curl https://sdk.cloud.google.com | bash
+gcloud init
+gcloud auth login</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+  </div>
+  <div class="step">
+    <strong>执行一键部署</strong>
+    <pre><code>bash scripts/setup-gcp.sh YOUR_PROJECT_ID</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+    <p>脚本自动完成 7 步：</p>
+    <ol>
+      <li>开启 Cloud Run / Artifact Registry / Vertex AI / Cloud Build / Secret Manager API</li>
+      <li>创建专用服务账号 + 最小 IAM 权限</li>
+      <li>创建 Artifact Registry 仓库</li>
+      <li>配置 Secret Manager (交互式输入 Exa/ES 密钥)</li>
+      <li>Cloud Build 构建 Docker 镜像</li>
+      <li>部署到 Cloud Run</li>
+      <li>Smoke Test (健康检查 + Plan API 测试)</li>
+    </ol>
+  </div>
+  <div class="step">
+    <strong>后续更新</strong>
+    <pre><code># 代码更新后快速重新部署
+gcloud builds submit . \
+  --tag us-central1-docker.pkg.dev/YOUR_PROJECT_ID/g-rapid-agent/app:latest
+gcloud run deploy g-rapid-agent \
+  --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/g-rapid-agent/app:latest \
+  --region us-central1</code><button class="copy-btn" onclick="copyCode(this)">复制</button></pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="quota">五、配额与限流指南</h2>
+
+<h3>Vertex AI DSQ (Dynamic Shared Quota) 分层</h3>
+<table>
+  <tr><th>模型</th><th>Tier 1 ($10-$250/月)</th><th>Tier 2 ($250-$2K)</th><th>Tier 3 (>$2K)</th><th>系统限制</th></tr>
+  <tr><td>Gemini Flash</td><td>2M TPM</td><td>4M TPM</td><td>10M TPM</td><td>30K RPM/区域</td></tr>
+  <tr><td>Gemini Pro</td><td>500K TPM</td><td>1M TPM</td><td>2M TPM</td><td><strong>10 QPM 硬限制</strong></td></tr>
+</table>
+
+<div class="callout callout-danger">
+  <strong>关键限制：</strong>Gemini 2.5 Pro 有 <strong>10 QPM (每分钟 10 次查询)</strong> 的硬限制，不随 Tier 升级。多用户并发时 Pro 会成为瓶颈。考虑：
+  <ul>
+    <li>将非关键 Pro 调用降级为 Flash</li>
+    <li>购买 Provisioned Throughput 获取保证吞吐</li>
+    <li>使用 global endpoint 而非区域端点 (GOOGLE_VERTEX_LOCATION=global)</li>
+  </ul>
+</div>
+
+<div class="accordion" onclick="toggleAccordion(this)">
+  <div class="accordion-header">
+    <span class="arrow">▶</span>
+    <strong>本项目各端点 Gemini 调用量分析</strong>
+  </div>
+  <div class="accordion-body">
+    <table>
+      <tr><th>端点</th><th>Flash 调用</th><th>Pro 调用</th><th>并发风险</th></tr>
+      <tr><td>/api/plan</td><td>1</td><td>0</td><td>低</td></tr>
+      <tr><td>/api/research/fetch</td><td>0-N (知识抽取)</td><td>0</td><td>中 (p-limit 5)</td></tr>
+      <tr><td>/api/research/report</td><td>0</td><td>1 (streaming)</td><td>Pro 瓶颈</td></tr>
+      <tr><td>/api/research/mindmap</td><td>0</td><td>1 (streaming)</td><td>Pro 瓶颈</td></tr>
+      <tr><td>/api/predictions (创建)</td><td>2</td><td>1</td><td>高 (后台)</td></tr>
+      <tr><td>/api/evaluate (harness)</td><td>1-10 (每轮 judge)</td><td>1-10 (每轮报告)</td><td>极高 (循环)</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="troubleshoot">六、故障排除</h2>
+
+<div class="accordion" onclick="toggleAccordion(this)">
+  <div class="accordion-header">
+    <span class="arrow">▶</span>
+    <strong>429 RESOURCE_EXHAUSTED — Gemini 限流</strong>
+  </div>
+  <div class="accordion-body">
+    <p><strong>原因：</strong>DSQ 共享池容量不足或 Pro 超过 10 QPM。</p>
+    <p><strong>解决方案：</strong></p>
+    <ol>
+      <li>gemini-client.ts 自动重试 (已内置, 最多 3 次指数退避)</li>
+      <li>切换到 global endpoint: <code>GOOGLE_VERTEX_LOCATION=global</code></li>
+      <li>增加消费以升级 Tier (30 天自动评估)</li>
+      <li>购买 Provisioned Throughput</li>
+    </ol>
+  </div>
+</div>
+
+<div class="accordion" onclick="toggleAccordion(this)">
+  <div class="accordion-header">
+    <span class="arrow">▶</span>
+    <strong>403 PERMISSION_DENIED — 权限不足</strong>
+  </div>
+  <div class="accordion-body">
+    <p><strong>本地开发：</strong></p>
+    <pre><code>gcloud auth application-default login
+gcloud ai endpoints list --region=us-central1 --project=YOUR_PROJECT</code></pre>
+    <p><strong>Cloud Run：</strong></p>
+    <pre><code>gcloud projects add-iam-policy-binding YOUR_PROJECT \
+  --member="serviceAccount:SA_EMAIL" \
+  --role="roles/aiplatform.user"</code></pre>
+  </div>
+</div>
+
+<div class="accordion" onclick="toggleAccordion(this)">
+  <div class="accordion-header">
+    <span class="arrow">▶</span>
+    <strong>Cloud Run 503 / 超时</strong>
+  </div>
+  <div class="accordion-body">
+    <p><strong>超时：</strong>Cloud Run 默认 300s。Harness 多轮循环可能超时。</p>
+    <pre><code># 增加超时
+gcloud run services update g-rapid-agent \
+  --timeout=600 --region=us-central1
+
+# 检查日志
+gcloud run services logs read g-rapid-agent --region=us-central1</code></pre>
+    <p><strong>冷启动：</strong>确保 <code>--min-instances=1</code>。</p>
+  </div>
+</div>
+
+<div class="accordion" onclick="toggleAccordion(this)">
+  <div class="accordion-header">
+    <span class="arrow">▶</span>
+    <strong>Elasticsearch 连接失败</strong>
+  </div>
+  <div class="accordion-body">
+    <p>确认 ES_CLOUD_ID 和 ES_API_KEY 正确。在 Secret Manager 中检查：</p>
+    <pre><code>gcloud secrets versions access latest --secret=es-cloud-id
+gcloud secrets versions access latest --secret=es-api-key</code></pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="files">七、变更文件清单</h2>
+
+<table>
+  <tr><th>类型</th><th>文件</th><th>改动说明</th></tr>
+  <tr><td><span class="badge badge-required">新增</span></td><td><code>lib/gemini-client.ts</code></td><td>统一 Gemini wrapper (重试/并发/超时/错误分类)</td></tr>
+  <tr><td><span class="badge badge-required">新增</span></td><td><code>scripts/setup-gcp.sh</code></td><td>一键 GCP 部署脚本</td></tr>
+  <tr><td><span class="badge badge-required">新增</span></td><td><code>doc/gcp-deployment-optimization-checklist.md</code></td><td>8 阶段 50+ 项部署优化清单</td></tr>
+  <tr><td><span class="badge badge-required">新增</span></td><td><code>doc/gcp-adc-deployment-handbook.html</code></td><td>本交互手册</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>lib/gemini.ts</code></td><td>vertex → createVertex 显式初始化</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>app/api/plan/route.ts</code></td><td>safeGenerateObject + 429/503 处理</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>app/api/research/report/route.ts</code></td><td>safeStreamText + 错误处理</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>app/api/research/mindmap/route.ts</code></td><td>safeStreamObject + 错误处理</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>lib/prediction-generator.ts</code></td><td>safeGenerateObject 迁移</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>lib/harness-adapter.ts</code></td><td>safeGenerateText + safeGenerateObject</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>agents/evaluator/llm-judge.ts</code></td><td>safeGenerateObject 迁移</td></tr>
+  <tr><td><span class="badge badge-recommended">修改</span></td><td><code>lib/knowledge-extractor.ts</code></td><td>统一重试逻辑，移除重复代码</td></tr>
+  <tr><td><span class="badge badge-optional">修改</span></td><td><code>.env.example</code></td><td>添加 ADC 使用说明</td></tr>
+</table>
+
+<script>
+function toggleAccordion(el) {
+  el.classList.toggle('open');
+}
+
+function switchTab(tabEl, contentId) {
+  const group = tabEl.parentElement.dataset.group;
+  document.querySelectorAll(`.tabs[data-group="${group}"] .tab`).forEach(t => t.classList.remove('active'));
+  document.querySelectorAll(`.tab-content[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById(contentId).classList.add('active');
+}
+
+function copyCode(btn) {
+  const code = btn.parentElement.querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '已复制';
+    setTimeout(() => btn.textContent = '复制', 1500);
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,6 +1,7 @@
-import { generateObject, streamText } from 'ai';
+import { streamText } from 'ai';
 import { z } from 'zod';
 import { flashModel, proModel } from './gemini';
+import { safeGenerateObject } from './gemini-client';
 import { getActiveProviders } from './search-provider';
 import { getClient } from './es-client';
 import { RESULT_TTL_MS } from './prediction-seeds';
@@ -27,7 +28,7 @@ export async function generateRealPrediction(id: string, question: string): Prom
 
   try {
     // Step 1: Plan sub-queries
-    const { object: plan } = await generateObject({
+    const planResult = await safeGenerateObject({
       model: flashModel,
       schema: z.object({
         subQueries: z.array(z.string()).min(3).max(4),
@@ -36,6 +37,7 @@ export async function generateRealPrediction(id: string, question: string): Prom
 Each query should be a full sentence optimized for semantic search, covering different angles.`,
       prompt: `Prediction question: "${question}"`,
     });
+    const plan = planResult.object as { subQueries: string[] };
 
     await updateProgress(client, id, 'collecting_sources', 'Searching the web for evidence');
 
@@ -61,7 +63,7 @@ Each query should be a full sentence optimized for semantic search, covering dif
 
     let analysis: z.infer<typeof AnalysisSchema>;
     try {
-      const { object } = await generateObject({
+      const analysisResult = await safeGenerateObject({
         model: flashModel,
         schema: AnalysisSchema,
         system: `You are a prediction analyst. Analyze sources and provide probability estimates.
@@ -70,7 +72,7 @@ The "probabilities" array must match the "outcome_labels" array in order and sum
 The "rationales" array must match the "outcome_labels" array in order.`,
         prompt: `Question: "${question}"\n\nSources:\n${sourcesContext}`,
       });
-      analysis = object;
+      analysis = analysisResult.object as z.infer<typeof AnalysisSchema>;
     } catch {
       await finishWithFallback(client, id, question, sources);
       return;

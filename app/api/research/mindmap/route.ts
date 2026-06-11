@@ -1,5 +1,5 @@
-import { streamObject } from 'ai';
 import { proModel } from '@/lib/gemini';
+import { safeStreamObject } from '@/lib/gemini-client';
 import { mindMapSchema } from '@/lib/schemas';
 import { contextCache } from '@/lib/context-cache';
 
@@ -11,18 +11,26 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Session expired or not found' }, { status: 404 });
   }
 
-  const result = streamObject({
-    model: proModel,
-    schema: mindMapSchema,
-    system: `你是一个世界顶尖的行业分析专家。根据用户的研究关键词和提供的互联网实时抓取正文，
+  try {
+    const result = safeStreamObject({
+      model: proModel,
+      schema: mindMapSchema,
+      system: `你是一个世界顶尖的行业分析专家。根据用户的研究关键词和提供的互联网实时抓取正文，
 提炼出一套具备严密逻辑层级关系的思维导图。要求：
 1. 必须完全基于事实，不得凭空捏造
 2. 根节点为研究主题，下设 3-5 个一级分支
 3. 每个分支可有 2-4 个子节点
 4. 每个节点必须包含 summary（一句话分析）
 5. 标明信息来源 sources（引用文献标题或链接）`,
-    prompt: `研究关键词: "${context.keyword}"\n\n抓取到的最新网页参考数据:\n${context.formattedContext}`,
-  });
+      prompt: `研究关键词: "${context.keyword}"\n\n抓取到的最新网页参考数据:\n${context.formattedContext}`,
+    });
 
-  return result.toTextStreamResponse();
+    return result.toTextStreamResponse();
+  } catch (error: any) {
+    const cls = error?.geminiErrorClass;
+    if (cls === 'rate_limit') {
+      return Response.json({ error: { code: 'RATE_LIMITED', message: 'Gemini API rate limited' } }, { status: 429 });
+    }
+    return Response.json({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Mindmap generation failed' } }, { status: 503 });
+  }
 }
