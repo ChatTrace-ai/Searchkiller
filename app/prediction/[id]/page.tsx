@@ -5,6 +5,7 @@ import { LoaderCircle } from 'lucide-react';
 import { PredictionDetailView } from '@/components/PredictionDetailView';
 import { PredictionHeader } from '@/components/PredictionHeader';
 import type { PredictionDetail, PredictionProgress } from '@/lib/prediction-types';
+import { useCreatePrediction } from '../../use-create-prediction';
 
 export default function PredictionPage({
   params,
@@ -12,6 +13,7 @@ export default function PredictionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const createPrediction = useCreatePrediction();
   const [prediction, setPrediction] = useState<PredictionDetail | null>(null);
   const [progress, setProgress] = useState<PredictionProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function PredictionPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <PredictionHeader />
+      <PredictionHeader onSubmit={createPrediction} />
       {error && (
         <div className="mx-auto max-w-xl px-5 py-24 text-center">
           <h1 className="text-2xl font-bold text-slate-900">Prediction unavailable</h1>

@@ -15,7 +15,7 @@ Presentation layer (L4 in permission hierarchy). UI-only React components.
 | PredictionSearch.tsx | Prediction question form |
 | PredictionHeader.tsx | Detail-page header and search |
 | PredictionCard.tsx | Popular prediction summary card |
-| PaginatedPredictionGrid.tsx | Cursor-driven paginated card grid |
+| PaginatedPredictionGrid.tsx | Props-driven paginated card grid |
 | PredictionDetailView.tsx | Probability, source, summary, and report layout |
 
 ## Boundaries

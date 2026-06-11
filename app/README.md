@@ -10,6 +10,9 @@ The application layer containing pages and API route handlers.
 | `/research` | `research/page.tsx` | Research dashboard with parallel report + mind map streaming |
 | `/prediction/:id` | `prediction/[id]/page.tsx` | Prediction probability and analysis dashboard |
 
+Client orchestration hooks in `app/` own API calls, navigation, polling, and
+pagination state. Presentation components receive data and callbacks via props.
+
 ## API Routes
 
 | Endpoint | File | Description |

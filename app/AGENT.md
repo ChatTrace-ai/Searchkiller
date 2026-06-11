@@ -7,6 +7,8 @@ Next.js App Router layer (L2 in permission hierarchy).
 | Path | Type | Description |
 |------|------|-------------|
 | page.tsx | page | Landing / search entry |
+| use-create-prediction.ts | client orchestration | Prediction creation and navigation |
+| use-prediction-pagination.ts | client orchestration | Popular prediction pagination state and API calls |
 | layout.tsx | layout | Root English HTML shell and metadata |
 | globals.css | styles | Global CSS + Tailwind directives |
 | research/page.tsx | page | Research orchestration dashboard |

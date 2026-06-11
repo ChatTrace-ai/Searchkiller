@@ -4,7 +4,8 @@ import { ArrowRight } from 'lucide-react';
 import { PaginatedPredictionGrid } from '@/components/PaginatedPredictionGrid';
 import { PredictionHeader } from '@/components/PredictionHeader';
 import { PredictionSearch } from '@/components/PredictionSearch';
-import { useCreatePrediction } from '@/lib/use-create-prediction';
+import { useCreatePrediction } from './use-create-prediction';
+import { usePredictionPagination } from './use-prediction-pagination';
 
 const popularSearches = [
   { label: 'World Cup winner', question: 'Who will win the 2026 FIFA World Cup?' },
@@ -15,10 +16,11 @@ const popularSearches = [
 
 export default function HomePage() {
   const createPrediction = useCreatePrediction();
+  const pagination = usePredictionPagination();
 
   return (
     <main className="min-h-screen bg-white">
-      <PredictionHeader />
+      <PredictionHeader onSubmit={createPrediction} />
 
       <section className="prediction-hero border-b border-slate-100">
         <div className="mx-auto max-w-5xl px-5 py-16 text-center sm:py-20">
@@ -59,7 +61,7 @@ export default function HomePage() {
             16 predictions per page <ArrowRight className="h-4 w-4 rotate-90" />
           </span>
         </div>
-        <PaginatedPredictionGrid />
+        <PaginatedPredictionGrid {...pagination} />
       </section>
     </main>
   );

@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { PredictionListResponse, PredictionSummary } from '@/lib/prediction-types';
+import type { PredictionSummary } from '@/lib/prediction-types';
 import { PredictionCard } from './PredictionCard';
 
 function CardSkeleton() {
@@ -25,89 +24,31 @@ function CardSkeleton() {
   );
 }
 
-export function PaginatedPredictionGrid() {
-  const [items, setItems] = useState<PredictionSummary[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageCursors, setPageCursors] = useState<Array<string | null>>([null]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const loadingRef = useRef(false);
+interface PaginatedPredictionGridProps {
+  items: PredictionSummary[];
+  page: number;
+  hasMore: boolean;
+  loading: boolean;
+  error: string | null;
+  goToPage: (page: number) => void;
+  goNext: () => void;
+  retry: () => void;
+}
 
-  const load = useCallback(async (
-    targetPage: number,
-    cursor: string | null,
-    scrollToGrid = false,
-  ) => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({ limit: '16' });
-      if (cursor) params.set('cursor', cursor);
-      const response = await fetch(`/api/predictions/popular?${params}`);
-      const body = (await response.json()) as PredictionListResponse & {
-        error?: { message?: string };
-      };
-      if (!response.ok) throw new Error(body.error?.message || 'Could not load predictions.');
-
-      setItems(body.items);
-      setPage(targetPage);
-      setNextCursor(body.nextCursor);
-      setHasMore(body.hasMore);
-      if (body.nextCursor) {
-        setPageCursors((current) => {
-          const updated = [...current];
-          updated[targetPage] = body.nextCursor;
-          return updated;
-        });
-      }
-      if (scrollToGrid) {
-        document.getElementById('popular-predictions')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      }
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Could not load predictions.');
-    } finally {
-      loadingRef.current = false;
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(1, null);
-    // Initial load only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const goToPage = (targetPage: number) => {
-    if (targetPage < 1 || loading) return;
-    const cursor = pageCursors[targetPage - 1];
-    if (cursor === undefined) return;
-    load(targetPage, cursor, true);
-  };
-
-  const goNext = () => {
-    if (hasMore && nextCursor) {
-      load(page + 1, nextCursor, true);
-    }
-  };
-
+export function PaginatedPredictionGrid({
+  items,
+  page,
+  hasMore,
+  loading,
+  error,
+  goToPage,
+  goNext,
+  retry,
+}: PaginatedPredictionGridProps) {
   const availablePages = hasMore ? [page, page + 1] : Array.from(
     { length: page },
     (_, index) => index + 1,
   );
-
-  useEffect(() => {
-    if (page === 1 && pageCursors.length === 1 && nextCursor) {
-      setPageCursors([null, nextCursor]);
-    }
-  }, [nextCursor, page, pageCursors.length]);
 
   return (
     <>
@@ -123,7 +64,7 @@ export function PaginatedPredictionGrid() {
       <div className="flex min-h-24 items-center justify-center">
         {error && (
           <button
-            onClick={() => goToPage(page)}
+            onClick={retry}
             className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600"
           >
             Retry loading predictions
