@@ -55,6 +55,17 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* scroll hint */}
+        <a
+          href="#popular-predictions"
+          aria-label="Scroll to predictions"
+          className="mb-8 flex flex-col items-center gap-0.5 self-center text-laplace-muted/60 hover:text-laplace-sage transition-colors"
+        >
+          <span className="animate-bounce-slow block h-3 w-3 border-b-2 border-r-2 border-current" style={{ transform: 'rotate(45deg)' }} />
+          <span className="animate-bounce-slow block h-3 w-3 border-b-2 border-r-2 border-current" style={{ transform: 'rotate(45deg)', animationDelay: '0.2s', opacity: 0.55 }} />
+          <span className="animate-bounce-slow block h-3 w-3 border-b-2 border-r-2 border-current" style={{ transform: 'rotate(45deg)', animationDelay: '0.4s', opacity: 0.3 }} />
+        </a>
       </div>
 
       {/* Cards — warmer white to contrast with hero */}

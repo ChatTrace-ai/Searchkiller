@@ -28,6 +28,7 @@ const config: Config = {
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
         'grow': 'grow 0.3s ease-out',
+        'bounce-slow': 'bounceSlow 1.6s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -37,6 +38,10 @@ const config: Config = {
         grow: {
           '0%': { transform: 'scale(0)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        bounceSlow: {
+          '0%, 100%': { transform: 'rotate(45deg) translateY(-2px)', opacity: '0.4' },
+          '50%': { transform: 'rotate(45deg) translateY(4px)', opacity: '1' },
         },
       },
     },
