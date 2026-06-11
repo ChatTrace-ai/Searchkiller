@@ -81,7 +81,7 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
       className="group flex min-h-72 flex-col rounded-lg border border-laplace-border bg-laplace-card p-5 shadow-[0_4px_16px_rgba(44,36,23,0.06)] transition hover:-translate-y-0.5 hover:border-laplace-sage hover:shadow-[0_10px_28px_rgba(27,58,45,0.1)]"
     >
       <div className="flex items-start gap-3">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-laplace-green/10 text-laplace-green">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-laplace-border/60 text-laplace-sage">
           <Icon className="h-6 w-6" />
         </span>
         <div className="min-w-0">
@@ -99,13 +99,13 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
           <div key={`${outcome.label}-${index}`}>
             <div className="flex items-center gap-2 text-sm">
               <span className="w-5 text-laplace-muted">{index + 1}</span>
-              <span className="text-base">{outcome.icon || '•'}</span>
+              {outcome.icon && <span className="text-base">{outcome.icon}</span>}
               <span className="min-w-0 flex-1 truncate text-[#3A3020]">{outcome.label}</span>
-              <span className="font-semibold text-laplace-green">{outcome.probability}%</span>
+              <span className="font-semibold text-laplace-sage">{outcome.probability}%</span>
             </div>
             <div className="ml-7 mt-1.5 h-1.5 overflow-hidden rounded-full bg-laplace-border">
               <span
-                className="block h-full rounded-full bg-laplace-green"
+                className="block h-full rounded-full bg-laplace-sage"
                 style={{ width: `${Math.max(2, outcome.probability)}%` }}
               />
             </div>
@@ -115,7 +115,7 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
 
       <div className="mt-auto flex items-center justify-between pt-5">
         {prediction.dataSource === 'seed' ? (
-          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+          <span className="rounded bg-laplace-border/50 px-1.5 py-0.5 text-[10px] font-medium text-laplace-muted">
             Estimated
           </span>
         ) : (

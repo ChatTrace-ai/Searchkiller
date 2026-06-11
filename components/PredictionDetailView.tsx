@@ -55,7 +55,7 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
                 </h1>
                 <p className="mt-2 flex items-center gap-2 text-sm text-laplace-muted">
                   {(prediction as any).dataSource === 'seed' ? (
-                    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                    <span className="rounded bg-laplace-border/50 px-1.5 py-0.5 text-[10px] font-medium text-laplace-muted">
                       Estimated
                     </span>
                   ) : (prediction as any).dataSource === 'real' ? (
@@ -105,17 +105,17 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
                       </span>
                     </td>
                     <th scope="row" className="px-2 py-4 text-left">
-                      <span className="flex items-center gap-3 font-semibold text-[#2C2417]">
-                        <span className="text-xl">{outcome.icon || '•'}</span>
+                        <span className="flex items-center gap-3 font-semibold text-[#2C2417]">
+                        {outcome.icon && <span className="text-xl">{outcome.icon}</span>}
                         {outcome.label}
                       </span>
                     </th>
                     <td className="px-2 py-4">
                       <span className="flex items-center gap-4">
-                        <strong className="w-16 text-lg text-laplace-green">{outcome.probability}%</strong>
+                        <strong className="w-16 text-lg text-laplace-sage">{outcome.probability}%</strong>
                         <span className="h-2 flex-1 overflow-hidden rounded-full bg-laplace-border">
                           <span
-                            className="block h-full rounded-full bg-laplace-green"
+                            className="block h-full rounded-full bg-laplace-sage"
                             style={{ width: `${Math.max(2, outcome.probability)}%` }}
                           />
                         </span>
@@ -147,16 +147,16 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
                     }`}>
                       {outcome.rank}
                     </span>
-                    <span className="text-lg">{outcome.icon || '•'}</span>
+                    {outcome.icon && <span className="text-lg">{outcome.icon}</span>}
                     <span className="min-w-0 flex-1 truncate font-semibold text-[#2C2417]">
                       {outcome.label}
                     </span>
-                    <strong className="text-lg text-laplace-green">{outcome.probability}%</strong>
+                    <strong className="text-lg text-laplace-sage">{outcome.probability}%</strong>
                   </div>
                   <div className="mt-3 flex items-center gap-3">
                     <span className="h-2 flex-1 overflow-hidden rounded-full bg-laplace-border">
                       <span
-                        className="block h-full rounded-full bg-laplace-green"
+                        className="block h-full rounded-full bg-laplace-sage"
                         style={{ width: `${Math.max(2, outcome.probability)}%` }}
                       />
                     </span>

@@ -14,7 +14,7 @@ export function PredictionHeader({
 }) {
   return (
     <header className={opaque ? 'bg-laplace-parchment' : 'bg-transparent'}>
-        <div className="mx-auto flex h-28 w-full max-w-[1500px] items-center gap-5 px-5 lg:px-8">
+        <div className="flex h-28 w-full items-center gap-5 pl-4 pr-8 lg:pr-12">
         <BrandMark />
         {showSearch && (
           <div className="ml-auto hidden w-full max-w-3xl sm:block">

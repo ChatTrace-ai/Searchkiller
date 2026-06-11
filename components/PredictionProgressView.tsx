@@ -349,13 +349,13 @@ export function PredictionProgressView({
                     <div key={outcome.label}>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span className="font-medium text-[#2C2417]">{outcome.label}</span>
-                        <span className="font-semibold tabular-nums text-laplace-green">
+                        <span className="font-semibold tabular-nums text-laplace-sage">
                           {outcome.probability}%
                         </span>
                       </div>
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-laplace-border">
                         <div
-                          className="h-full rounded-full bg-laplace-green transition-[width] duration-700"
+                          className="h-full rounded-full bg-laplace-sage transition-[width] duration-700"
                           style={{ width: `${Math.max(1, Math.min(100, outcome.probability))}%` }}
                         />
                       </div>
