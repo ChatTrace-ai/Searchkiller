@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export function LoadingStates() {
   return (
-    <div className="h-full flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <motion.div
         className="flex flex-col items-center gap-4"
         initial={{ opacity: 0 }}
@@ -20,7 +20,7 @@ export function LoadingStates() {
             />
           ))}
         </div>
-        <p className="text-gray-400 text-sm">正在分析关键词并抓取数据...</p>
+        <p className="text-gray-600 text-sm">正在分析关键词并抓取数据...</p>
       </motion.div>
     </div>
   );

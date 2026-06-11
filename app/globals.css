@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --foreground: #f5f5f7;
-  --background: #0f0f0f;
+  --foreground: #1f2937;
+  --background: #ffffff;
 }
 
 body {
@@ -20,11 +20,11 @@ body {
 }
 
 /* Markdown report styling */
-.prose-report h1 { @apply text-2xl font-bold mb-4 text-white; }
-.prose-report h2 { @apply text-xl font-semibold mb-3 mt-6 text-gray-100; }
-.prose-report h3 { @apply text-lg font-medium mb-2 mt-4 text-gray-200; }
-.prose-report p { @apply mb-3 text-gray-300 leading-relaxed; }
-.prose-report ul { @apply list-disc pl-6 mb-3 text-gray-300; }
-.prose-report ol { @apply list-decimal pl-6 mb-3 text-gray-300; }
-.prose-report blockquote { @apply border-l-4 border-google-blue pl-4 italic text-gray-400; }
-.prose-report code { @apply bg-surface-100 px-1.5 py-0.5 rounded text-sm; }
+.prose-report h1 { @apply text-2xl font-bold mb-4 text-gray-900; }
+.prose-report h2 { @apply text-xl font-semibold mb-3 mt-6 text-gray-800; }
+.prose-report h3 { @apply text-lg font-medium mb-2 mt-4 text-gray-700; }
+.prose-report p { @apply mb-3 text-gray-700 leading-relaxed; }
+.prose-report ul { @apply list-disc pl-6 mb-3 text-gray-700; }
+.prose-report ol { @apply list-decimal pl-6 mb-3 text-gray-700; }
+.prose-report blockquote { @apply border-l-4 border-google-blue pl-4 italic text-gray-600; }
+.prose-report code { @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm text-gray-800; }

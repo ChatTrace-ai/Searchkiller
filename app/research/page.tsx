@@ -1,10 +1,9 @@
 'use client';
 
-import { Suspense, useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { StreamingReport } from '@/components/StreamingReport';
-import { MindMap } from '@/components/MindMap';
 import { SourceCard } from '@/components/SourceCard';
 import { LoadingStates } from '@/components/LoadingStates';
 
@@ -18,11 +17,11 @@ interface Source {
 function ResearchContent() {
   const searchParams = useSearchParams();
   const keyword = searchParams.get('q') || '';
+  const startedKeywordRef = useRef<string | null>(null);
 
   const [phase, setPhase] = useState<Phase>('planning');
   const [sources, setSources] = useState<Source[]>([]);
   const [reportContent, setReportContent] = useState('');
-  const [mindMapData, setMindMapData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const startResearch = useCallback(async () => {
@@ -30,12 +29,18 @@ function ResearchContent() {
 
     try {
       setPhase('planning');
+      setReportContent('');
+
       const planRes = await fetch('/api/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keyword }),
       });
-      const { subQueries } = await planRes.json();
+      const planBody = await planRes.json();
+      if (!planRes.ok) {
+        throw new Error(planBody.error || '查询规划失败');
+      }
+      const { subQueries } = planBody;
 
       setPhase('fetching');
       const fetchRes = await fetch('/api/research/fetch', {
@@ -43,60 +48,57 @@ function ResearchContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keyword, subQueries }),
       });
-      const { sessionId: sid, sources: src } = await fetchRes.json();
+      const fetchBody = await fetchRes.json();
+      if (!fetchRes.ok) {
+        throw new Error(fetchBody.error || '文献抓取失败');
+      }
+      const { sessionId: sid, sources: src } = fetchBody;
       setSources(src);
 
       setPhase('streaming');
-      startStreams(sid);
-    } catch (err: any) {
-      setError(err.message || 'Research failed');
+      await streamReport(sid);
+      setPhase('done');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Research failed');
     }
   }, [keyword]);
 
-  const startStreams = async (sid: string) => {
-    const decoder = new TextDecoder();
-
+  const streamReport = async (sid: string) => {
     const reportRes = await fetch('/api/research/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId: sid }),
     });
+
+    if (!reportRes.ok) {
+      const body = await reportRes.json().catch(() => ({}));
+      throw new Error(body.error || '报告生成失败');
+    }
+
     const reportReader = reportRes.body?.getReader();
-    if (reportReader) {
-      let text = '';
-      while (true) {
-        const { done, value } = await reportReader.read();
-        if (done) break;
-        text += decoder.decode(value, { stream: true });
-        setReportContent(text);
-      }
+    if (!reportReader) {
+      throw new Error('报告流不可用');
     }
 
-    const mapRes = await fetch('/api/research/mindmap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: sid }),
-    });
-    const mapReader = mapRes.body?.getReader();
-    if (mapReader) {
-      let json = '';
-      while (true) {
-        const { done, value } = await mapReader.read();
-        if (done) break;
-        json += decoder.decode(value, { stream: true });
-        try {
-          const parsed = JSON.parse(json);
-          setMindMapData(parsed);
-        } catch {}
-      }
+    const decoder = new TextDecoder();
+    let text = '';
+    while (true) {
+      const { done, value } = await reportReader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
+      setReportContent(text);
     }
 
-    setPhase('done');
+    if (!text.trim()) {
+      throw new Error('报告内容为空');
+    }
   };
 
   useEffect(() => {
+    if (!keyword || startedKeywordRef.current === keyword) return;
+    startedKeywordRef.current = keyword;
     startResearch();
-  }, [startResearch]);
+  }, [keyword, startResearch]);
 
   if (error) {
     return (
@@ -114,10 +116,10 @@ function ResearchContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <header className="flex items-center justify-between px-6 py-3 border-b border-surface-200">
+    <div className="h-screen flex flex-col bg-white">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
         <a href="/" className="text-google-blue font-semibold">Searchkiller</a>
-        <span className="text-sm text-gray-400 truncate max-w-md">{keyword}</span>
+        <span className="text-sm text-gray-600 truncate max-w-md">{keyword}</span>
         <div className="flex items-center gap-2">
           {phase === 'streaming' && (
             <motion.div
@@ -127,22 +129,18 @@ function ResearchContent() {
             />
           )}
           <span className="text-xs text-gray-500">
-            {phase === 'streaming' ? '分析中...' : '完成'}
+            {phase === 'streaming' ? '生成报告中...' : '完成'}
           </span>
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden">
-        <div className="w-1/2 border-r border-surface-200 overflow-y-auto">
+      <main className="flex-1 overflow-hidden bg-white">
+        <div className="h-full overflow-y-auto bg-white">
+          {phase === 'streaming' && !reportContent && (
+            <p className="p-6 text-sm text-gray-500">正在生成报告，通常需要 1–2 分钟...</p>
+          )}
           <StreamingReport
             content={reportContent}
-            isStreaming={phase === 'streaming'}
-          />
-        </div>
-
-        <div className="w-1/2 overflow-hidden">
-          <MindMap
-            data={mindMapData}
             isStreaming={phase === 'streaming'}
           />
         </div>

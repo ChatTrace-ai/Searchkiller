@@ -28,8 +28,8 @@ export default function HomePage() {
         <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-google-blue to-blue-400 bg-clip-text text-transparent">
           Searchkiller
         </h1>
-        <p className="text-gray-400 mb-12 text-lg">
-          输入关键词，AI 自动生成深度研究报告与思维导图
+        <p className="text-gray-600 mb-12 text-lg">
+          输入关键词，AI 自动生成深度研究报告
         </p>
       </motion.div>
 
@@ -52,7 +52,7 @@ export default function HomePage() {
           <button
             key={tag}
             onClick={() => handleSearch(tag)}
-            className="px-3 py-1.5 text-sm text-gray-400 border border-surface-200 rounded-full hover:border-google-blue hover:text-google-blue transition-colors"
+            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-google-blue hover:text-google-blue transition-colors"
           >
             {tag}
           </button>
