@@ -78,7 +78,7 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
   return (
     <Link
       href={`/prediction/${prediction.id}`}
-      className="group flex min-h-72 flex-col rounded-lg border border-laplace-border bg-laplace-card p-5 shadow-[0_4px_16px_rgba(44,36,23,0.06)] transition hover:-translate-y-0.5 hover:border-laplace-sage hover:shadow-[0_10px_28px_rgba(27,58,45,0.1)]"
+      className="group flex min-h-72 flex-col rounded-xl border border-laplace-border bg-laplace-card p-5 shadow-[0_4px_16px_rgba(44,36,23,0.04)] transition hover:-translate-y-0.5 hover:border-laplace-sage hover:shadow-[0_10px_28px_rgba(74,124,89,0.12)]"
     >
       <div className="flex items-start gap-3">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-laplace-border/60 text-laplace-sage">

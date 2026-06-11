@@ -32,54 +32,49 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
   const visibleOutcomes = expanded ? prediction.outcomes : prediction.outcomes.slice(0, 6);
 
   return (
-    <main className="mx-auto max-w-[1500px] px-5 py-7 lg:px-8">
-      <nav className="mb-5 text-sm text-laplace-muted">
+    <main className="mx-auto max-w-[1500px] px-5 py-5 lg:px-8">
+      <nav className="mb-4 text-sm text-laplace-muted">
         Trending <span className="mx-2">/</span> {prediction.category}
         <span className="mx-2">/</span>
         <span className="text-[#2C2417]">{prediction.question}</span>
       </nav>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(340px,0.9fr)]">
-        <section className="min-w-0 rounded-lg border border-laplace-border bg-laplace-card p-5 shadow-sm sm:p-7">
-          <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
-            <div className="flex min-w-0 items-center gap-4">
-              <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#4A7C59,#1B3A2D)] text-white shadow-inner">
-                <Gauge className="h-10 w-10" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-widest text-laplace-sage">
-                  {prediction.category}
-                </p>
-                <h1 className="mt-1 text-2xl font-bold text-[#2C2417] sm:text-3xl">
-                  {prediction.question}
-                </h1>
-                <p className="mt-2 flex items-center gap-2 text-sm text-laplace-muted">
-                  {(prediction as any).dataSource === 'seed' ? (
-                    <span className="rounded bg-laplace-border/50 px-1.5 py-0.5 text-[10px] font-medium text-laplace-muted">
-                      Estimated
-                    </span>
-                  ) : (prediction as any).dataSource === 'real' ? (
-                    <span className="rounded bg-laplace-green/10 px-1.5 py-0.5 text-[10px] font-medium text-laplace-sage">
-                      AI-verified
-                    </span>
-                  ) : null}
-                  <span>Forecast based on multiple information sources · Updated {formatDate(prediction.updatedAt)}</span>
-                </p>
-              </div>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(340px,0.9fr)]">
+        <section className="flex min-w-0 flex-col rounded-xl border border-laplace-border bg-laplace-card p-5 shadow-sm sm:p-6 xl:min-h-[calc(100dvh-10.5rem)]">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-laplace-border/60 text-laplace-sage">
+              <Gauge className="h-8 w-8" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold uppercase tracking-widest text-laplace-sage">
+                {prediction.category}
+              </p>
+              <h1 className="mt-1 text-2xl font-bold text-[#2C2417] sm:text-3xl">
+                {prediction.question}
+              </h1>
+              <p className="mt-2 flex items-center gap-2 text-sm text-laplace-muted">
+                {(prediction as any).dataSource === 'seed' ? (
+                  <span className="rounded bg-laplace-border/50 px-1.5 py-0.5 text-[10px] font-medium text-laplace-muted">
+                    Estimated
+                  </span>
+                ) : (prediction as any).dataSource === 'real' ? (
+                  <span className="rounded bg-laplace-green/10 px-1.5 py-0.5 text-[10px] font-medium text-laplace-sage">
+                    AI-verified
+                  </span>
+                ) : null}
+                <span>Forecast based on multiple information sources · Updated {formatDate(prediction.updatedAt)}</span>
+              </p>
             </div>
+          </div>
 
-            <div className="w-full rounded-lg border border-laplace-border p-4 lg:w-64">
-              <div className="flex items-center gap-2 text-sm font-medium text-laplace-muted">
-                <ShieldCheck className="h-4 w-4" /> Overall confidence
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <span className={`rounded-md px-3 py-1 text-lg font-bold capitalize ${confidenceStyles[prediction.confidence.level]}`}>
-                  {prediction.confidence.level}
-                </span>
-                <span className="text-2xl font-bold text-[#2C2417]">{prediction.confidence.score}</span>
-              </div>
-              <p className="mt-3 text-sm leading-5 text-laplace-muted">{prediction.confidence.explanation}</p>
-            </div>
+          <div className="mt-5 flex items-center gap-4 rounded-xl border border-laplace-border bg-laplace-parchment/50 px-5 py-4">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-laplace-muted" />
+            <span className="text-sm font-medium text-laplace-muted">Overall confidence</span>
+            <span className={`rounded-md px-3 py-1 text-sm font-bold capitalize ${confidenceStyles[prediction.confidence.level]}`}>
+              {prediction.confidence.level}
+            </span>
+            <span className="text-xl font-bold text-[#2C2417]">{prediction.confidence.score}</span>
+            <p className="ml-2 text-sm leading-5 text-laplace-muted">{prediction.confidence.explanation}</p>
           </div>
 
           <div className="mt-8 hidden overflow-x-auto md:block">
@@ -182,13 +177,13 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
             </button>
           )}
 
-          <p className="mt-8 border-t border-laplace-border pt-4 text-xs text-laplace-muted">
+          <p className="mt-auto border-t border-laplace-border pt-4 text-xs text-laplace-muted">
             Model-estimated probabilities are for reference only and do not constitute investment or decision advice.
           </p>
         </section>
 
-        <aside className="min-w-0 space-y-6 xl:sticky xl:top-6">
-          <section className="flex max-h-[360px] min-h-0 flex-col overflow-hidden rounded-lg border border-laplace-border bg-laplace-card shadow-sm">
+        <aside className="min-w-0 xl:sticky xl:top-6 xl:flex xl:h-[calc(100dvh-10.5rem)] xl:flex-col xl:gap-4 xl:overflow-hidden">
+          <section className="flex shrink-0 max-h-[260px] flex-col overflow-hidden rounded-xl border border-laplace-border bg-laplace-card shadow-sm">
             <div className="shrink-0 border-b border-laplace-border px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-laplace-sage">Evidence</p>
               <h2 className="mt-0.5 text-xl font-bold text-[#2C2417]">Reference sources</h2>
@@ -205,7 +200,7 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
                   rel="noopener noreferrer"
                   className="group flex items-start gap-3 py-4"
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-laplace-green/10 text-laplace-sage">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-laplace-border/50 text-laplace-muted">
                     <FileText className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -223,9 +218,9 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
             </div>
           </section>
 
-          <section className="flex max-h-[520px] min-h-0 flex-col overflow-hidden rounded-lg border border-laplace-border bg-laplace-card shadow-sm">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-laplace-border bg-laplace-card shadow-sm">
             <div className="flex shrink-0 items-center gap-3 border-b border-laplace-border px-5 py-4">
-              <FileText className="h-5 w-5 text-laplace-sage" />
+              <FileText className="h-5 w-5 text-laplace-muted" />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-laplace-sage">Forecast</p>
                 <h2 className="mt-0.5 text-xl font-bold text-[#2C2417]">Analysis report</h2>
