@@ -1,23 +1,31 @@
-import { semanticSearch } from '@/lib/exa';
-import { hybridSearch } from '@/lib/elasticsearch';
+import { incrementalSearch } from '@/lib/incremental-search';
 import { contextCache } from '@/lib/context-cache';
+import { ensureKnowledgeIndex } from '@/lib/knowledge-store';
 import type { ResearchContext } from '@/lib/schemas';
 
+let indexReady = false;
+
 export async function POST(req: Request) {
-  const { keyword, subQueries } = await req.json();
+  if (!indexReady) {
+    await ensureKnowledgeIndex().catch((e) =>
+      console.warn('[fetch/route] knowledge index init warning:', e.message),
+    );
+    indexReady = true;
+  }
+
+  const { keyword, subQueries, project_id } = await req.json();
 
   if (!keyword || !subQueries?.length) {
     return Response.json({ error: 'keyword and subQueries are required' }, { status: 400 });
   }
 
-  const [exaSources, esSources] = await Promise.all([
-    semanticSearch(subQueries),
-    hybridSearch(keyword),
-  ]);
+  const { sources, stats } = await incrementalSearch(
+    project_id || 'default',
+    keyword,
+    subQueries,
+  );
 
-  const allSources = [...exaSources, ...esSources];
-
-  const formattedContext = allSources
+  const formattedContext = sources
     .map((s, i) => `[文献源 #${i + 1}]\n标题: ${s.title}\n链接: ${s.url}\n核心正文内容:\n${s.text}`)
     .join('\n\n');
 
@@ -25,7 +33,7 @@ export async function POST(req: Request) {
   const context: ResearchContext = {
     keyword,
     subQueries,
-    sources: allSources,
+    sources,
     formattedContext,
     createdAt: Date.now(),
   };
@@ -34,6 +42,7 @@ export async function POST(req: Request) {
 
   return Response.json({
     sessionId,
-    sources: allSources.map(({ title, url }) => ({ title, url })),
+    sources: sources.map(({ title, url, origin }) => ({ title, url, origin })),
+    stats,
   });
 }

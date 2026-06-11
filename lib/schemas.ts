@@ -15,6 +15,64 @@ export interface Source {
   title: string;
   url: string;
   text: string;
+  origin?: 'exa' | 'google' | 'knowledge-cache';
+}
+
+export interface KnowledgeEntry {
+  project_id: string;
+  topic: string;
+  facts: string[];
+  entities: Array<{
+    name: string;
+    type: string;
+    description?: string;
+  }>;
+  source_url: string;
+  source_title: string;
+  raw_summary: string;
+  created_at: string;
+}
+
+export interface KnowledgeDocument extends KnowledgeEntry {
+  embedding_text?: string;
+  expires_at?: string;
+  access_count?: number;
+  last_accessed_at?: string;
+}
+
+export interface BulkResult {
+  succeeded: number;
+  failed: number;
+  duplicates: number;
+  errors?: Array<{ id: string; status: number; error?: string }>;
+}
+
+export interface CoverageResult {
+  subQuery: string;
+  covered: boolean;
+  score: number;
+  existingEntries: KnowledgeEntry[];
+}
+
+export interface ISearchProvider {
+  name: string;
+  search(queries: string[]): Promise<Source[]>;
+}
+
+export interface SearchStats {
+  totalSubQueries: number;
+  coveredByCache: number;
+  fetchedFromExternal: number;
+  /** Number of entries confirmed indexed. -1 means indexing is still pending (timed out). */
+  newEntriesIndexed: number;
+  cacheHitRate: number;
+  extractionErrors: number;
+  extractionDiagnostics?: {
+    total: number;
+    succeeded: number;
+    failed: number;
+    errorBreakdown: Record<string, number>;
+  };
 }
 
 export interface ResearchContext {

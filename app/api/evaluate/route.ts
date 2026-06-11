@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     // ── Feedback Loop Actions ──────────────────────────────────────────
 
     if (action === 'start_loop') {
-      const { keyword, subQueries, sources, maxRounds, contractOverrides } = body;
+      const { keyword, subQueries, sources, maxRounds, contractOverrides, judgeMode } = body;
       if (!keyword) {
         return NextResponse.json(
           { error: 'keyword is required' },
@@ -112,19 +112,20 @@ export async function POST(req: Request) {
         sources,
         maxRounds,
         contractOverrides,
+        judgeMode,
       });
       return NextResponse.json(result);
     }
 
     if (action === 'loop_next') {
-      const { loopId, userFeedback } = body;
+      const { loopId, userFeedback, judgeMode } = body;
       if (!loopId) {
         return NextResponse.json(
           { error: 'loopId is required' },
           { status: 400 },
         );
       }
-      const result = await loopNext(loopId, userFeedback);
+      const result = await loopNext(loopId, userFeedback, judgeMode);
       return NextResponse.json(result);
     }
 

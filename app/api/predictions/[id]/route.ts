@@ -1,5 +1,5 @@
 import { errorResponse } from '../responses';
-import { getPrediction } from '../store';
+import { getPrediction } from '@/lib/prediction-store';
 
 export const runtime = 'nodejs';
 
@@ -9,7 +9,7 @@ interface RouteContext {
 
 export async function GET(_req: Request, context: RouteContext) {
   const { id } = await context.params;
-  const prediction = getPrediction(id);
+  const prediction = await getPrediction(id);
 
   if (!prediction) {
     return errorResponse(

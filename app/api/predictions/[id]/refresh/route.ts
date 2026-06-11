@@ -1,5 +1,5 @@
 import { errorResponse } from '../../responses';
-import { refreshPrediction } from '../../store';
+import { refreshPrediction } from '@/lib/prediction-store';
 
 export const runtime = 'nodejs';
 
@@ -9,7 +9,7 @@ interface RouteContext {
 
 export async function POST(_req: Request, context: RouteContext) {
   const { id } = await context.params;
-  const result = refreshPrediction(id);
+  const result = await refreshPrediction(id);
 
   if (result.status === 'not_found') {
     return errorResponse(

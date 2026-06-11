@@ -35,11 +35,14 @@ import { initializeEvaluator, loadConfig, isInitialized } from '@/agents/evaluat
 import { recycle, evaluateExisting, getRecycleStats } from '@/agents/recycle';
 
 import { runLLMJudge, judgeToDimensionScores, formatJudgeFeedback } from '@/agents/evaluator/llm-judge';
+import { BackendJudge, BACKEND_DIMENSIONS } from '@/agents/evaluator/backend-judge';
 import { extractReportMetrics } from '@/harness/handoff';
 
 // ---------------------------------------------------------------------------
-// Searchkiller IJudge implementation
+// Searchkiller IJudge implementations
 // ---------------------------------------------------------------------------
+
+export type JudgeMode = 'llm' | 'backend' | 'composite';
 
 class SearchkillerJudge implements IJudge {
   async evaluate(handoff: HandoffDocument, dimensions: ScoreDimension[]): Promise<JudgeResult> {
@@ -47,6 +50,50 @@ class SearchkillerJudge implements IJudge {
     return {
       scores: judgeToDimensionScores(result),
       feedback: result.feedback,
+    };
+  }
+}
+
+/**
+ * Composite judge: runs both LLM-Judge (content quality) and Backend data checks
+ * (infrastructure quality from handoff data), then merges scores.
+ */
+class CompositeJudge implements IJudge {
+  private llmJudge = new SearchkillerJudge();
+  private backendJudge = new BackendJudge();
+
+  async evaluate(handoff: HandoffDocument, dimensions: ScoreDimension[]): Promise<JudgeResult> {
+    const [llmResult, backendResult] = await Promise.all([
+      this.llmJudge.evaluate(handoff, dimensions),
+      this.backendJudge.evaluate(handoff, BACKEND_DIMENSIONS),
+    ]);
+
+    const mergedScores: Record<string, number> = {};
+
+    for (const [k, v] of Object.entries(llmResult.scores)) {
+      mergedScores[`content_${k}`] = v;
+    }
+    for (const [k, v] of Object.entries(backendResult.scores)) {
+      mergedScores[`backend_${k}`] = v;
+    }
+
+    return {
+      scores: mergedScores,
+      feedback: {
+        strengths: [
+          ...llmResult.feedback.strengths.slice(0, 2).map((s) => `[内容] ${s}`),
+          ...backendResult.feedback.strengths.slice(0, 2).map((s) => `[后端] ${s}`),
+        ],
+        weaknesses: [
+          ...llmResult.feedback.weaknesses.slice(0, 2).map((w) => `[内容] ${w}`),
+          ...backendResult.feedback.weaknesses.slice(0, 2).map((w) => `[后端] ${w}`),
+        ],
+        actionableImprovements: [
+          ...llmResult.feedback.actionableImprovements.slice(0, 2).map((a) => `[内容] ${a}`),
+          ...backendResult.feedback.actionableImprovements.slice(0, 2).map((a) => `[后端] ${a}`),
+        ],
+        overallAssessment: `Content: ${llmResult.feedback.overallAssessment} | Backend: ${backendResult.feedback.overallAssessment}`,
+      },
     };
   }
 }
@@ -176,8 +223,18 @@ export async function fetchSources(
 // Singleton instances
 // ---------------------------------------------------------------------------
 
-const judge = new SearchkillerJudge();
+const llmJudge = new SearchkillerJudge();
+const backendJudge = new BackendJudge();
+const compositeJudge = new CompositeJudge();
 const generator = new SearchkillerReportGenerator();
+
+function getJudge(mode: JudgeMode = 'llm'): IJudge {
+  switch (mode) {
+    case 'backend': return backendJudge;
+    case 'composite': return compositeJudge;
+    default: return llmJudge;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Adapted API — app/ calls these, never agents/ or harness/ directly
@@ -198,8 +255,10 @@ export async function startLoop(params: {
   maxRounds?: number;
   contractOverrides?: Partial<SprintContract['globalThresholds']>;
   skipSearch?: boolean;
+  judgeMode?: JudgeMode;
 }): Promise<LoopNextResult> {
   let { subQueries, sources } = params;
+  const judge = getJudge(params.judgeMode);
 
   if (!params.skipSearch) {
     if (!subQueries || subQueries.length === 0) {
@@ -211,19 +270,22 @@ export async function startLoop(params: {
     }
   }
 
+  const customDimensions = params.judgeMode === 'backend' ? BACKEND_DIMENSIONS : undefined;
+
   return harnessStartLoop({
     keyword: params.keyword,
     subQueries,
     sources,
     maxRounds: params.maxRounds,
     contractOverrides: params.contractOverrides,
+    customDimensions,
     judge,
     generator,
   });
 }
 
-export async function loopNext(loopId: string, userFeedback?: string): Promise<LoopNextResult> {
-  return harnessLoopNext(loopId, judge, generator, userFeedback);
+export async function loopNext(loopId: string, userFeedback?: string, judgeMode?: JudgeMode): Promise<LoopNextResult> {
+  return harnessLoopNext(loopId, getJudge(judgeMode), generator, userFeedback);
 }
 
 export async function loopApprove(loopId: string): Promise<LoopState> {

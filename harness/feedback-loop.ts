@@ -160,6 +160,7 @@ export async function startLoop(params: {
   sources?: HandoffSource[];
   maxRounds?: number;
   contractOverrides?: Partial<SprintContract['globalThresholds']>;
+  customDimensions?: SprintContract['dimensions'];
   judge: IJudge;
   generator: IReportGenerator;
 }): Promise<LoopNextResult> {
@@ -169,11 +170,15 @@ export async function startLoop(params: {
     sources = [],
     maxRounds = 10,
     contractOverrides,
+    customDimensions,
     judge,
     generator,
   } = params;
 
   const contract = proposeContract(keyword);
+  if (customDimensions) {
+    contract.dimensions = customDimensions;
+  }
   if (contractOverrides) {
     Object.assign(contract.globalThresholds, contractOverrides);
   }

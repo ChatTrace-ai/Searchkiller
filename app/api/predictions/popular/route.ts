@@ -1,4 +1,4 @@
-import { decodeCursor, listPopularPredictions } from '../store';
+import { decodeCursor, listPopularPredictions } from '@/lib/prediction-store';
 import { errorResponse } from '../responses';
 
 export const runtime = 'nodejs';
@@ -23,11 +23,11 @@ export async function GET(req: Request) {
     return errorResponse(400, 'INVALID_REQUEST', 'cursor is invalid.');
   }
 
-  return Response.json(
-    listPopularPredictions({
-      offset,
-      limit,
-      category: searchParams.get('category'),
-    }),
-  );
+  const result = await listPopularPredictions({
+    offset,
+    limit,
+    category: searchParams.get('category'),
+  });
+
+  return Response.json(result);
 }

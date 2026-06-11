@@ -1,4 +1,4 @@
-import { createPrediction } from './store';
+import { createPrediction } from '@/lib/prediction-store';
 import { errorResponse } from './responses';
 
 export const runtime = 'nodejs';
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const result = createPrediction(question);
+  const result = await createPrediction(question);
   const completed = result.status === 'completed';
 
   return Response.json(
