@@ -1,0 +1,86 @@
+{
+  "id": "sprint-1781160095911-62c414e7",
+  "status": "completed",
+  "createdAt": "2026-06-11T06:41:35.911Z",
+  "updatedAt": "2026-06-11T06:42:34.107Z",
+  "keyword": "2026世界杯冠军预测",
+  "sprintGoal": "生成一份关于\"2026世界杯冠军预测\"的高质量深度研究报告",
+  "dimensions": [
+    {
+      "name": "source_diversity",
+      "description": "数据来源多样性：是否同时包含外部（Exa）和内部（ES）数据源",
+      "weight": 0.25,
+      "hardThreshold": 3,
+      "targetScore": 8
+    },
+    {
+      "name": "data_completeness",
+      "description": "数据完整性：所有 source 字段非空、URL 合法、无重复",
+      "weight": 0.25,
+      "hardThreshold": 5,
+      "targetScore": 9
+    },
+    {
+      "name": "search_coverage",
+      "description": "搜索覆盖度：来源数量 >= 阈值、snippet 非空率 >= 80%",
+      "weight": 0.2,
+      "hardThreshold": 5,
+      "targetScore": 8
+    },
+    {
+      "name": "report_structure",
+      "description": "报告结构：包含必要章节标题、有来源引用编号",
+      "weight": 0.15,
+      "hardThreshold": 4,
+      "targetScore": 8
+    },
+    {
+      "name": "pipeline_metrics",
+      "description": "管道指标：生成时间在合理范围内、来源数与报告长度匹配",
+      "weight": 0.15,
+      "hardThreshold": 3,
+      "targetScore": 7
+    }
+  ],
+  "globalThresholds": {
+    "minWeightedScore": 7,
+    "maxRounds": 3,
+    "autoApproveScore": 9,
+    "timeoutMinutes": 30
+  },
+  "negotiationHistory": [
+    {
+      "timestamp": "2026-06-11T06:41:35.911Z",
+      "actor": "system",
+      "action": "propose",
+      "changes": "Proposed default contract with 4 dimensions: factual_accuracy (30%), structural_completeness (25%), analysis_depth (25%), citation_quality (20%)"
+    },
+    {
+      "timestamp": "2026-06-11T06:41:35.911Z",
+      "actor": "user",
+      "action": "accept",
+      "changes": "Contract accepted and activated"
+    }
+  ],
+  "currentRound": 1,
+  "roundResults": [
+    {
+      "round": 1,
+      "timestamp": "2026-06-11T06:42:34.106Z",
+      "handoffId": "hoff-1781160154103-5bf61dda",
+      "dimensionScores": {
+        "source_diversity": 10,
+        "data_completeness": 10,
+        "search_coverage": 10,
+        "report_structure": 10,
+        "pipeline_metrics": 5
+      },
+      "weightedScore": 9.25,
+      "hardThresholdsPassed": true,
+      "contractSatisfied": true,
+      "evaluatorFeedback": "**总评**: Backend: 14/15 checks passed, 17 sources, 22 citations, report 3.5k chars\n\n**评分**: source_diversity=10 | data_completeness=10 | search_coverage=10 | report_structure=10 | pipeline_metrics=5\n\n**优点**:\n  + source_diversity: 10.0/10 (3/3 checks)\n  + data_completeness: 10.0/10 (4/4 checks)\n  + search_coverage: 10.0/10 (2/2 checks)\n\n**不足**:\n\n**改进建议**:\n  1. [pipeline_metrics] Report generation < 120s: unknown"
+    }
+  ],
+  "activatedAt": "2026-06-11T06:41:35.911Z",
+  "completedAt": "2026-06-11T06:42:34.106Z"
+}

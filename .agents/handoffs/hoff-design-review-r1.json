@@ -1,0 +1,105 @@
+{
+  "id": "hoff-design-review-r1",
+  "version": 1,
+  "phase": "evaluated",
+  "createdAt": "2026-06-11T17:06:00.000Z",
+  "updatedAt": "2026-06-11T17:10:00.000Z",
+  "input": {
+    "keyword": "incremental-knowledge-search-design-review",
+    "subQueries": [
+      "架构数据流完整性与模块划分评审",
+      "5个Evaluator Probe维度覆盖度分析",
+      "边界情况与优雅降级设计评审",
+      "Evaluator集成兼容性影响评估"
+    ]
+  },
+  "output": {
+    "report": null,
+    "mindmap": null,
+    "sources": [
+      {
+        "title": "Incremental Knowledge Search Design Doc",
+        "url": "doc/2026-06-11-incremental-knowledge-search-design.md",
+        "snippet": "将 Searchkiller 的搜索后端从\"每次全量外部搜索\"升级为\"ES 知识库优先 + 增量外部补充\"模式"
+      },
+      {
+        "title": "Evaluator D1: API Reliability Probe",
+        "url": "agents/evaluator/probes/api-reliability.ts",
+        "snippet": "Tests HTTP 2xx, valid JSON, required fields, SLA compliance"
+      },
+      {
+        "title": "Evaluator D2: Search Quality Probe",
+        "url": "agents/evaluator/probes/search-quality.ts",
+        "snippet": "Tests Exa+ES sources, dedup, snippet non-empty rate"
+      },
+      {
+        "title": "Evaluator D3: Data Integrity Probe",
+        "url": "agents/evaluator/probes/data-integrity.ts",
+        "snippet": "Validates subQueries, sessionId UUID, source field completeness"
+      },
+      {
+        "title": "Evaluator D4: Cache Effectiveness Probe",
+        "url": "agents/evaluator/probes/cache-effectiveness.ts",
+        "snippet": "Session creation, cache hit, cache miss → 404"
+      },
+      {
+        "title": "Evaluator D5: Graceful Degradation Probe",
+        "url": "agents/evaluator/probes/graceful-degradation.ts",
+        "snippet": "Invalid input handling, error codes, malformed JSON"
+      },
+      {
+        "title": "Backend Judge — source_diversity logic",
+        "url": "agents/evaluator/backend-judge.ts",
+        "snippet": "Uses url.includes('#internal') to distinguish ES vs Exa sources"
+      },
+      {
+        "title": "Harness Adapter — fetchSources",
+        "url": "lib/harness-adapter.ts",
+        "snippet": "Bridges Exa+ES into HandoffSource with URL dedup"
+      }
+    ]
+  },
+  "metrics": {
+    "planDurationMs": 0,
+    "fetchDurationMs": 0,
+    "reportDurationMs": 0,
+    "mindmapDurationMs": 0,
+    "totalDurationMs": 0,
+    "sourceCount": 8,
+    "modelUsed": "claude-4.6-opus-design-review"
+  },
+  "evaluation": {
+    "round": 1,
+    "score": 6.89,
+    "dimensionScores": {
+      "architecture_soundness": 8.5,
+      "probe_alignment": 6.4,
+      "edge_case_coverage": 5.8,
+      "evaluator_compatibility": 6.5,
+      "implementation_readiness": 7.0
+    },
+    "feedback": "**总评**: 架构设计合理但 Evaluator 集成缝隙明显，需补充超时/限流/source origin 追踪\n\n**评分**: architecture_soundness=8.5 | probe_alignment=6.4 | edge_case_coverage=5.8 | evaluator_compatibility=6.5 | implementation_readiness=7.0\n\n**优点**:\n  + 模块划分严格遵循 L0-L3 权限层级\n  + KnowledgeEntry 使用 Zod schema 校验 Gemini 输出\n  + 向后兼容设计（project_id 可选，默认 default）\n\n**不足**:\n  - checkCoverage() 缺少独立超时机制（P0）\n  - Gemini 并发提取无限流控制（P0）\n  - 语义去重(cosine 0.85)与URL去重标准不匹配\n  - BackendJudge source_diversity 逻辑需要 source origin 标记\n  - knowledge-cache 缺少独立健康检查 probe\n\n**改进建议**:\n  1. 为 kNN 查询添加 3s 独立 timeout，超时 fallback 为 uncovered\n  2. 使用 p-limit(concurrency:5) 控制 Gemini 提取并发\n  3. 在 Source 接口添加 origin: 'exa'|'es'|'knowledge-cache' 字段\n  4. 定义 KnowledgeEntry → Source 的映射逻辑\n  5. 使用 ES op_type:create + deterministic _id 解决 TOCTOU 竞态",
+    "passesThreshold": false
+  },
+  "history": [
+    {
+      "round": 1,
+      "timestamp": "2026-06-11T17:06:00.000Z",
+      "action": "created",
+      "summary": "Initial 4-round design review for incremental-knowledge-search"
+    },
+    {
+      "round": 1,
+      "timestamp": "2026-06-11T17:10:00.000Z",
+      "action": "evaluated",
+      "summary": "Round 1: score 6.89 — FAIL (below minWeightedScore 7.0)",
+      "score": 6.89
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-06-11T17:15:00.000Z",
+      "action": "revised",
+      "summary": "Design doc v0.2.0: Fixed all 10 findings (2P0 + 4P1 + 4P2). Key changes: checkCoverage 3s timeout, p-limit(5) Gemini concurrency, two-layer dedup, toSource() mapping, deterministic _id idempotency, Source.origin field, deleteKnowledge API, Security/Observability sections, knowledge-cache probe coverage."
+    }
+  ]
+}

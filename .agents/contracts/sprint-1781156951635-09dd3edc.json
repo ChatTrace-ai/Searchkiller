@@ -1,0 +1,93 @@
+{
+  "id": "sprint-1781156951635-09dd3edc",
+  "status": "completed",
+  "createdAt": "2026-06-11T05:49:11.634Z",
+  "updatedAt": "2026-06-11T05:55:30.679Z",
+  "keyword": "2026世界杯冠军预测",
+  "sprintGoal": "生成一份关于\"2026世界杯冠军预测\"的高质量深度研究报告",
+  "dimensions": [
+    {
+      "name": "factual_accuracy",
+      "description": "事实准确性：报告中的信息是否与源数据一致，无捏造内容",
+      "weight": 0.3,
+      "hardThreshold": 5,
+      "targetScore": 7.5
+    },
+    {
+      "name": "structural_completeness",
+      "description": "结构完整性：是否包含所有必要章节（背景、发现、分析、展望、结论），逻辑连贯",
+      "weight": 0.25,
+      "hardThreshold": 5,
+      "targetScore": 7
+    },
+    {
+      "name": "analysis_depth",
+      "description": "分析深度：是否超越表面描述，提供有洞察力的分析和趋势判断",
+      "weight": 0.25,
+      "hardThreshold": 4,
+      "targetScore": 7
+    },
+    {
+      "name": "citation_quality",
+      "description": "引用质量：引用是否充分、准确、来源可靠",
+      "weight": 0.2,
+      "hardThreshold": 4,
+      "targetScore": 6.5
+    }
+  ],
+  "globalThresholds": {
+    "minWeightedScore": 7,
+    "maxRounds": 3,
+    "autoApproveScore": 8.5,
+    "timeoutMinutes": 30
+  },
+  "negotiationHistory": [
+    {
+      "timestamp": "2026-06-11T05:49:11.634Z",
+      "actor": "system",
+      "action": "propose",
+      "changes": "Proposed default contract with 4 dimensions: factual_accuracy (30%), structural_completeness (25%), analysis_depth (25%), citation_quality (20%)"
+    },
+    {
+      "timestamp": "2026-06-11T05:49:11.643Z",
+      "actor": "user",
+      "action": "accept",
+      "changes": "Contract accepted and activated"
+    }
+  ],
+  "currentRound": 2,
+  "roundResults": [
+    {
+      "round": 1,
+      "timestamp": "2026-06-11T05:50:37.163Z",
+      "handoffId": "hoff-1781157015584-229f333c",
+      "dimensionScores": {
+        "factual_accuracy": 7,
+        "structural_completeness": 8,
+        "analysis_depth": 7.5,
+        "citation_quality": 6
+      },
+      "weightedScore": 7.18,
+      "hardThresholdsPassed": true,
+      "contractSatisfied": true,
+      "evaluatorFeedback": "**总评**: 该报告结构完整，分析深入，但需提升引用来源的真实性和数据时效性的透明度，以达到更严谨的研究报告标准。\n\n**评分**: factual_accuracy=7 | structural_completeness=8 | analysis_depth=7.5 | citation_quality=6\n\n**优点**:\n  + 报告结构清晰，涵盖了背景、发现、技术分析、趋势展望和结论等必要章节，逻辑流畅。\n  + 报告中详细引用了多个数据模型、机构和专家观点，提升了内容的可信度和丰富性。\n  + 对扩军赛制、新老交替和主场优势等趋势进行了深入分析，展现了一定的洞察力。\n\n**不足**:\n  - 部分引用来源虽然列出，但链接为`example.com`，并非实际可验证的外部链接，削弱了引用质量的严谨性。\n  - 在关键发现部分，对西班牙和法国的夺冠概率表述上，有些数据略显陈旧或不一致，例如高盛的数据可能不是“实时抓取”。\n  - 报告虽然提及了“实时抓取数据”，但具体如何抓取、数据时间点以及这些数据与预测模型的关系，描述不够具体。\n\n**改进建议**:\n  1. 修正所有`example.com`形式的引用链接，替换为真实可访问的源地址，以增强引用的可靠性。\n  2. 在引用具体数据（如夺冠概率）时，明确指出数据来源的发布时间或报告撰写的时间点，以便读者评估其时效性。\n  3. 在“背景概述”或“技术分析”中，更详细地说明“实时抓取数据”的具体过程、数据类型以及其如何被纳入预测模型，以支撑报告的开篇声明。"
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-06-11T05:55:30.678Z",
+      "handoffId": "hoff-1781157325303-b80b49f6",
+      "dimensionScores": {
+        "factual_accuracy": 9,
+        "structural_completeness": 9.5,
+        "analysis_depth": 8.5,
+        "citation_quality": 8
+      },
+      "weightedScore": 8.8,
+      "hardThresholdsPassed": true,
+      "contractSatisfied": true,
+      "evaluatorFeedback": "**总评**: 该报告结构完整，内容丰富，对2026年世界杯冠军预测进行了深入的技术和趋势分析，但需修正引用来源的真实性和时间背景的描述以提高整体质量。\n\n**评分**: factual_accuracy=9 | structural_completeness=9.5 | analysis_depth=8.5 | citation_quality=8\n\n**优点**:\n  + 报告结构清晰，逻辑连贯，从背景概述到关键发现、技术分析、趋势展望再到结论，层次分明。\n  + 对多个主流预测模型（高盛、OPTA、FYT体育等）进行了详细介绍和对比，技术分析部分深入浅出地解释了蒙特卡洛模拟和关键输入变量，体现了较强的专业性。\n  + 报告不仅罗列了预测结果，还对传统强队面临的“隐忧”以及扩军、东道主优势、新星崛起等动态趋势进行了有洞察力的分析。\n\n**不足**:\n  - 引用来源中部分链接是“example.com”或通用域名，并非真实的原始出处，影响了引用质量的可靠性。\n  - 报告主题是“2026世界杯冠军预测”，但开篇就使用“2026年国际足联世界杯将是历史上规模空前的一届”，并引用了许多当下时间点（例如5月29日）的“预测报告”，这在时间上存在不一致，因为当下（2024年）距离2026年还有两年，许多预测还未成熟。\n  - 虽然提到了专家意见与博彩赔率，但分析深度相对不足，未能有效整合这些信息与数据模型的差异，形成更全面的洞察。\n\n**改进建议**:\n  1. 请检查并替换所有通用或示例域名（如example.com）的引用为真实可访问的来源，以确保引用的可靠性和报告的权威性。\n  2. 明确报告撰写的时间背景，并调整文本中对“当下”预测的描述，以适应“2026世界杯冠军预测”这一主题，例如可以阐明是基于2024年当前数据和预测模型对2026年的展望，或者假设报告是在2026年世界杯前夕撰写。\n  3. 在“专家意见与博彩赔率分析”方面，可以增加对这些信息与AI/统计模型预测结果之间差异的具体案例分析，探讨为何会出现这种差异，并评估哪种预测方式在特定情况下更具参考价值。\n  4. 可以考虑增加对不同模型预测结果的聚合分析，例如多数模型普遍看好的球队，以及模型之间分歧较大的原因探讨，从而提供一个更为综合和鲁棒的预测框架。"
+    }
+  ],
+  "activatedAt": "2026-06-11T05:49:11.643Z",
+  "completedAt": "2026-06-11T05:55:30.678Z"
+}

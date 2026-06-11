@@ -1,18 +1,17 @@
 # predictions/ — Agent Manifest
 
 ## Role
-Prediction API v1 orchestration and mock persistence.
+Prediction API v1 orchestration and Elasticsearch-backed persistence via lib/prediction-store.
 
 ## Contents
 | File | Description |
 |------|-------------|
 | route.ts | Create or reuse a prediction |
-| store.ts | Featured catalog, cursor pagination, and mutable mock records |
 | responses.ts | Unified API error responses |
 | popular/ | Featured prediction listing |
 | [id]/ | Prediction detail and refresh routes |
 
 ## Boundaries
-- reads: lib/prediction-types
-- writes: process-local in-memory prediction records
+- reads: lib/prediction-types, lib/prediction-store
+- writes: Elasticsearch predictions index (via lib/prediction-store)
 - never imports from: components/, agents/

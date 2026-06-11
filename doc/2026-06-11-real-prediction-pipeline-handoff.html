@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G-RapidAgent 真实数据预测管线 — 交接文档</title>
+  <style>
+    :root {
+      --blue: #3B82F6;
+      --blue-dark: #2563EB;
+      --blue-soft: #EFF6FF;
+      --blue-glow: rgba(59, 130, 246, 0.18);
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-300: #D1D5DB;
+      --gray-500: #6B7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --code-bg: #0F172A;
+      --code-border: #1E293B;
+      --green: #10B981;
+      --amber: #F59E0B;
+      --red: #EF4444;
+      --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(160deg, var(--gray-100) 0%, #E8EEF5 45%, var(--gray-50) 100%);
+      color: var(--gray-700);
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+
+    /* Layout */
+    .page-wrapper {
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    /* TOC Sidebar */
+    .toc-sidebar {
+      position: sticky;
+      top: 1.5rem;
+      flex: 0 0 200px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1rem;
+      border: 1px solid var(--gray-200);
+      max-height: calc(100vh - 3rem);
+      overflow-y: auto;
+    }
+
+    .toc-sidebar h2 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gray-500);
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+    }
+
+    .toc-sidebar nav a {
+      display: block;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+      color: var(--gray-700);
+      text-decoration: none;
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .toc-sidebar nav a:hover {
+      color: var(--blue);
+      background: var(--blue-soft);
+      border-left-color: var(--blue);
+    }
+
+    /* Main content */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+    }
+
+    /* Header */
+    .doc-header {
+      background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 55%, #60A5FA 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 2rem;
+    }
+
+    .doc-header .badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+    }
+
+    .doc-header h1 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+    }
+
+    .doc-header .meta {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-bottom: 1rem;
+    }
+
+    .doc-header .summary {
+      font-size: 1rem;
+      line-height: 1.7;
+      opacity: 0.95;
+      max-width: 720px;
+    }
+
+    /* Sections */
+    section {
+      scroll-margin-top: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--gray-200);
+      padding: 1.75rem 1.75rem 1.5rem;
+    }
+
+    section h2 {
+      font-size: 1.35rem;
+      color: var(--gray-900);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 2px solid var(--blue-soft);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    section h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 1.2em;
+      background: var(--blue);
+      border-radius: 2px;
+    }
+
+    section p {
+      margin-bottom: 1rem;
+      color: var(--gray-700);
+    }
+
+    section ul {
+      margin: 0.5rem 0 1rem 1.25rem;
+    }
+
+    section li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Architecture flow diagram */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 1rem 0;
+    }
+
+    .pipeline-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pipeline-node {
+      background: var(--blue-soft);
+      border: 1px solid #BFDBFE;
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--blue-dark);
+      white-space: nowrap;
+    }
+
+    .pipeline-node.highlight {
+      background: linear-gradient(135deg, #DBEAFE, #EFF6FF);
+      border-color: var(--blue);
+      box-shadow: 0 2px 8px var(--blue-glow);
+    }
+
+    .pipeline-node.muted {
+      background: var(--gray-100);
+      border-color: var(--gray-300);
+      color: var(--gray-700);
+      font-weight: 500;
+    }
+
+    .pipeline-node.api {
+      background: #ECFDF5;
+      border-color: #C4B5FD;
+      color: #6D28D9;
+    }
+
+    .pipeline-node.es {
+      background: #D1FAE5;
+      border-color: #6EE7B7;
+      color: #047857;
+    }
+
+    .pipeline-node.gemini {
+      background: #FEF3C7;
+      border-color: #FCD34D;
+      color: #B45309;
+    }
+
+    .pipeline-node.exa {
+      background: #FEE2E2;
+      border-color: #FCA5A5;
+      color: #B91C1C;
+    }
+
+    .pipeline-arrow-down {
+      display: flex;
+      justify-content: flex-start;
+      padding: 0.35rem 0 0.35rem 2rem;
+      color: var(--blue);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .pipeline-arrow-right {
+      color: var(--blue);
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0 0.25rem;
+    }
+
+    .pipeline-indent {
+      margin-left: 2.5rem;
+      padding-left: 1rem;
+      border-left: 2px dashed var(--gray-300);
+    }
+
+    .pipeline-sub {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 0.5rem 0 0.5rem 2.5rem;
+      padding: 1rem;
+      background: var(--gray-50);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+    }
+
+    .pipeline-sub .pipeline-row {
+      gap: 0.75rem;
+    }
+
+    .pipeline-label {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    thead th {
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+      color: #fff;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.75rem 1rem;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--gray-50);
+    }
+
+    tbody tr:nth-child(odd) {
+      background: #fff;
+    }
+
+    tbody td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .op-badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .op-badge.add { background: #D1FAE5; color: #065F46; }
+    .op-badge.mod { background: #DBEAFE; color: #1E40AF; }
+    .op-badge.del { background: #FEE2E2; color: #991B1B; }
+    .op-badge.ref { background: #FEF3C7; color: #92400E; }
+    .op-badge.fix { background: #EDE9FE; color: #5B21B6; }
+
+    code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.85em;
+      background: var(--gray-100);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      color: var(--blue-dark);
+    }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: #E2E8F0;
+    }
+
+    .tok-comment { color: #64748B; }
+    .tok-method { color: #7DD3FC; font-weight: 600; }
+    .tok-path { color: #86EFAC; }
+    .tok-key { color: #FDE68A; }
+    .tok-str { color: #FCA5A5; }
+    .tok-cmd { color: #C4B5FD; }
+
+    /* API cards */
+    .api-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .api-card {
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      background: var(--gray-50);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .api-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 4px 16px var(--blue-glow);
+    }
+
+    .api-method {
+      display: inline-block;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+    }
+
+    .api-method.post { background: #DBEAFE; color: #1D4ED8; }
+    .api-method.get { background: #D1FAE5; color: #059669; }
+
+    .api-path {
+      font-family: monospace;
+      font-size: 0.95rem;
+      color: var(--gray-900);
+      font-weight: 600;
+    }
+
+    .api-desc {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--gray-500);
+    }
+
+    /* Env cards */
+    .dep-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .dep-card {
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+      background: #fff;
+    }
+
+    .dep-card h3 {
+      font-size: 0.95rem;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+
+    .dep-card p {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      margin: 0;
+    }
+
+    .dep-card .env {
+      margin-top: 0.75rem;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+      padding: 0.5rem 0.65rem;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+
+    /* Steps */
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      margin: 1rem 0 0;
+      padding: 0;
+    }
+
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.75rem 0 0.75rem 3rem;
+      border-left: 2px solid var(--gray-200);
+      margin-left: 0.75rem;
+    }
+
+    .steps li:last-child {
+      border-left-color: transparent;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: -0.85rem;
+      top: 0.65rem;
+      width: 1.7rem;
+      height: 1.7rem;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    /* Limitations */
+    .limit-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .limit-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .limit-list li:last-child {
+      border-bottom: none;
+    }
+
+    .limit-icon {
+      flex-shrink: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: #FEF3C7;
+      color: #B45309;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    /* Footer */
+    .doc-footer {
+      text-align: center;
+      padding: 2rem 0 0;
+      color: var(--gray-500);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--gray-200);
+      margin-top: 2rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .page-wrapper {
+        flex-direction: column;
+        padding: 1rem 1rem 3rem;
+      }
+
+      .toc-sidebar {
+        position: static;
+        flex: none;
+        width: 100%;
+        max-height: none;
+      }
+
+      .toc-sidebar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .toc-sidebar nav a {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.5rem;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+      }
+
+      .toc-sidebar nav a:hover {
+        border-left-color: transparent;
+        border-bottom-color: var(--blue);
+      }
+
+      .doc-header {
+        padding: 1.75rem 1.25rem;
+      }
+
+      .card {
+        padding: 1.25rem 1rem;
+      }
+
+      .pipeline-indent,
+      .pipeline-sub {
+        margin-left: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- TOC -->
+    <aside class="toc-sidebar">
+      <h2>目录</h2>
+      <nav>
+        <a href="#overview">概述</a>
+        <a href="#architecture">架构图</a>
+        <a href="#changes">文件变更清单</a>
+        <a href="#api">API 端点</a>
+        <a href="#deps">环境依赖</a>
+        <a href="#guide">操作指南</a>
+        <a href="#limits">已知限制</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <!-- Header -->
+      <header class="doc-header">
+        <span class="badge">Handoff Document</span>
+        <h1>G-RapidAgent 真实数据预测管线 — 交接文档</h1>
+        <p class="meta">日期：2026-06-11 &nbsp;|&nbsp; 项目：G-RapidAgent / Searchkiller</p>
+        <p class="summary">
+          本文档介绍从 <strong>mock 预设数据</strong> 迁移到 <strong>Exa + Gemini 真实数据管线</strong> 的完整改造。
+          预测结果现由 Exa.ai 语义搜索与 Google Gemini 多阶段推理生成，Elasticsearch 持久化存储，前端通过轮询获取异步结果。
+        </p>
+      </header>
+
+      <!-- 1. Overview -->
+      <section id="overview" class="card">
+        <h2>概述</h2>
+        <p>
+          此前，预测功能依赖 <code>prediction-seeds.ts</code> 中的 mock 预设数据和定时器模拟延迟，
+          无法反映真实市场信号与语义检索能力。本次改造引入独立的
+          <code>lib/prediction-generator.ts</code> 管线，串联 Gemini Flash（规划与分析）、
+          Exa.ai（语义搜索）与 Gemini Pro（报告生成），实现端到端真实预测生成。
+        </p>
+        <p>
+          <code>prediction-store.ts</code> 负责 API 层编排：创建 ES skeleton、触发 fire-and-forget 异步生成、
+          并在完成后更新文档状态。前端无需改动轮询协议，只需等待更长的真实生成时间（约 60–90 秒）。
+        </p>
+      </section>
+
+      <!-- 2. Architecture -->
+      <section id="architecture" class="card">
+        <h2>架构图</h2>
+        <p>以下流程展示一次完整预测请求的生命周期：</p>
+
+        <div class="pipeline">
+          <div class="pipeline-row">
+            <span class="pipeline-node highlight">用户提问</span>
+            <span class="pipeline-arrow-right">→</span>
+            <span class="pipeline-node api">POST /api/predictions</span>
+            <span class="pipeline-label" style="margin-left: 0.5rem;">(prediction-store.ts)</span>
+          </div>
+
+          <div class="pipeline-arrow-down">↓</div>
+
+          <div class="pipeline-row">
+            <span class="pipeline-node es">写 ES skeleton</span>
+            <span class="pipeline-label" style="margin-left: 0.5rem;">status: processing</span>
+          </div>
+
+          <div class="pipeline-arrow-down">↓</div>
+
+          <div class="pipeline-row">
+            <span class="pipeline-node muted">fire-and-forget</span>
+            <span class="pipeline-arrow-right">→</span>
+            <span class="pipeline-node highlight">generateRealPrediction()</span>
+          </div>
+
+          <div class="pipeline-sub">
+            <div class="pipeline-row">
+              <span class="pipeline-node gemini">Gemini Flash</span>
+              <span class="pipeline-arrow-right">→</span>
+              <span class="pipeline-node">Plan 4 sub-queries</span>
+            </div>
+            <div class="pipeline-row">
+              <span class="pipeline-node exa">Exa.ai</span>
+              <span class="pipeline-arrow-right">→</span>
+              <span class="pipeline-node">Semantic search (6–12 sources)</span>
+            </div>
+            <div class="pipeline-row">
+              <span class="pipeline-node gemini">Gemini Flash</span>
+              <span class="pipeline-arrow-right">→</span>
+              <span class="pipeline-node">Analyze probabilities</span>
+            </div>
+            <div class="pipeline-row">
+              <span class="pipeline-node gemini">Gemini Pro</span>
+              <span class="pipeline-arrow-right">→</span>
+              <span class="pipeline-node">Generate report (streaming)</span>
+            </div>
+            <div class="pipeline-row">
+              <span class="pipeline-node es">ES</span>
+              <span class="pipeline-arrow-right">→</span>
+              <span class="pipeline-node">Update to completed</span>
+            </div>
+          </div>
+
+          <div class="pipeline-arrow-down">↓</div>
+
+          <div class="pipeline-row">
+            <span class="pipeline-node highlight">前端</span>
+            <span class="pipeline-arrow-right">→</span>
+            <span class="pipeline-node api">轮询 GET /api/predictions/:id</span>
+            <span class="pipeline-arrow-right">→</span>
+            <span class="pipeline-node">获取真实结果</span>
+          </div>
+        </div>
+
+        <pre><code><span class="tok-comment"># 等效伪代码</span>
+<span class="tok-key">POST</span> <span class="tok-path">/api/predictions</span>  <span class="tok-comment">→  create skeleton (processing)</span>
+<span class="tok-key">void</span> <span class="tok-method">generateRealPrediction</span>(id, query)  <span class="tok-comment">// fire-and-forget</span>
+  subQueries = <span class="tok-method">geminiFlash.plan</span>(query, n=<span class="tok-str">4</span>)
+  sources    = <span class="tok-method">exa.search</span>(subQueries, limit=<span class="tok-str">6-12</span>)
+  probs      = <span class="tok-method">geminiFlash.analyze</span>(sources)
+  report     = <span class="tok-method">geminiPro.streamReport</span>(probs, sources)
+  <span class="tok-method">elasticsearch.update</span>(id, { status: <span class="tok-str">"completed"</span>, ...report })</code></pre>
+      </section>
+
+      <!-- 3. File changes -->
+      <section id="changes" class="card">
+        <h2>文件变更清单</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 80px;">操作</th>
+              <th style="width: 35%;">文件</th>
+              <th>描述</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="op-badge add">新增</span></td>
+              <td><code>lib/prediction-generator.ts</code></td>
+              <td>真实数据生成管线：Plan sub-queries → Exa 搜索 → 概率分析 → 流式报告生成</td>
+            </tr>
+            <tr>
+              <td><span class="op-badge mod">修改</span></td>
+              <td><code>lib/prediction-store.ts</code></td>
+              <td>移除 mock timer，接入 <code>generateRealPrediction()</code> 异步调用</td>
+            </tr>
+            <tr>
+              <td><span class="op-badge mod">修改</span></td>
+              <td><code>lib/prediction-seeds.ts</code></td>
+              <td>清理废弃的 mock 预设数据，保留 featured seed 元数据</td>
+            </tr>
+            <tr>
+              <td><span class="op-badge del">删除</span></td>
+              <td><code>components/SearchInput.tsx</code></td>
+              <td>未使用的组件，已移除</td>
+            </tr>
+            <tr>
+              <td><span class="op-badge ref">重构</span></td>
+              <td><code>scripts/refresh-all-predictions.ts</code></td>
+              <td>精简为直接调用 generator，批量刷新 featured seeds</td>
+            </tr>
+            <tr>
+              <td><span class="op-badge fix">修复</span></td>
+              <td><code>components/BrandMark.tsx</code></td>
+              <td>修复 React Hydration warning（SSR/CSR 不一致）</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 4. API -->
+      <section id="api" class="card">
+        <h2>API 端点说明</h2>
+        <div class="api-grid">
+          <div class="api-card">
+            <span class="api-method post">POST</span>
+            <span class="api-path">/api/predictions</span>
+            <p class="api-desc">创建新预测。写入 ES skeleton（status: processing），并 fire-and-forget 触发真实生成管线。</p>
+          </div>
+          <div class="api-card">
+            <span class="api-method get">GET</span>
+            <span class="api-path">/api/predictions/:id</span>
+            <p class="api-desc">获取预测详情。前端轮询此端点，直到 status 从 <code>processing</code> 变为 <code>completed</code>。</p>
+          </div>
+          <div class="api-card">
+            <span class="api-method post">POST</span>
+            <span class="api-path">/api/predictions/:id/refresh</span>
+            <p class="api-desc">刷新已有预测。重新执行完整生成管线，覆盖旧结果。</p>
+          </div>
+          <div class="api-card">
+            <span class="api-method get">GET</span>
+            <span class="api-path">/api/predictions/popular</span>
+            <p class="api-desc">获取热门预测列表。用于首页 featured 展示。</p>
+          </div>
+        </div>
+
+        <pre><code><span class="tok-comment"># 典型调用流程</span>
+<span class="tok-method">curl</span> <span class="tok-key">-X POST</span> <span class="tok-str">/api/predictions</span> <span class="tok-key">-d</span> <span class="tok-str">'{"query":"Will X happen by 2026?"}'</span>
+<span class="tok-comment"># → { "id": "abc123", "status": "processing" }</span>
+
+<span class="tok-key">while</span> status == <span class="tok-str">"processing"</span>:
+  <span class="tok-method">curl</span> <span class="tok-path">/api/predictions/abc123</span>  <span class="tok-comment"># 每 3–5 秒轮询</span>
+<span class="tok-comment"># → status: "completed", report: {...}</span></code></pre>
+      </section>
+
+      <!-- 5. Dependencies -->
+      <section id="deps" class="card">
+        <h2>环境依赖</h2>
+        <p>本地开发与生产环境均需配置以下服务凭证（<code>.env.local</code> 或 Cloud 环境变量）：</p>
+        <div class="dep-grid">
+          <div class="dep-card">
+            <h3>Elasticsearch Serverless</h3>
+            <p>预测文档持久化存储，processing / completed 状态管理。</p>
+            <div class="env">ES_CLOUD_ID<br>ES_API_KEY</div>
+          </div>
+          <div class="dep-card">
+            <h3>Google Vertex AI</h3>
+            <p>Gemini 2.5 Flash（规划 + 分析）与 Gemini Pro（报告生成，streaming）。</p>
+            <div class="env">GOOGLE_CLOUD_PROJECT<br>GOOGLE_APPLICATION_CREDENTIALS</div>
+          </div>
+          <div class="dep-card">
+            <h3>Exa.ai</h3>
+            <p>语义搜索，为每个 sub-query 检索 6–12 条高质量来源。</p>
+            <div class="env">EXA_API_KEY</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Guide -->
+      <section id="guide" class="card">
+        <h2>操作指南</h2>
+        <ol class="steps">
+          <li>
+            <strong>启动开发服务器</strong>
+            <pre><code><span class="tok-method">npm run dev</span></code></pre>
+          </li>
+          <li>
+            <strong>批量刷新 featured seeds</strong>
+            <p style="margin: 0.5rem 0 0;">对所有 featured seed 重新生成真实预测数据：</p>
+            <pre><code><span class="tok-method">npx tsx scripts/refresh-all-predictions.ts</span></code></pre>
+          </li>
+          <li>
+            <strong>手动测试验证</strong>
+            <p style="margin: 0.5rem 0 0;">
+              在搜索框中输入图片描述的新问题 → 等待约 <strong>60–90 秒</strong> →
+              确认结果包含真实来源链接与概率分析，而非 mock 占位内容。
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <!-- 7. Limitations -->
+      <section id="limits" class="card">
+        <h2>已知限制和后续工作</h2>
+        <ul class="limit-list">
+          <li>
+            <span class="limit-icon">!</span>
+            <div>
+              <strong>剩余 24 个 featured seed 未用真实数据刷新</strong><br>
+              <span style="color: var(--gray-500); font-size: 0.9rem;">
+                需运行 <code>scripts/refresh-all-predictions.ts</code> 或逐个调用 refresh API 完成迁移。
+              </span>
+            </div>
+          </li>
+          <li>
+            <span class="limit-icon">!</span>
+            <div>
+              <strong>MindMap.tsx 与 /api/research/mindmap 路由悬空</strong><br>
+              <span style="color: var(--gray-500); font-size: 0.9rem;">
+                前端组件存在但后端路由未实现，MindMap 功能暂不可用。
+              </span>
+            </div>
+          </li>
+          <li>
+            <span class="limit-icon">!</span>
+            <div>
+              <strong>无 processing 超时 recovery 机制</strong><br>
+              <span style="color: var(--gray-500); font-size: 0.9rem;">
+                若生成管线异常中断，预测可能永久停留在 <code>processing</code> 状态，需手动 refresh 或清理 ES 文档。
+              </span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <footer class="doc-footer">
+        Generated by G-RapidAgent Pipeline, 2026-06-11
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

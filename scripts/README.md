@@ -11,6 +11,7 @@ Lightweight scripts for auditing, linting, and auto-fixing structural consistenc
 | `uniformize.py` | Auto-generates missing AGENT.md stubs | `python scripts/uniformize.py` |
 | `worktree-new.sh` | Creates isolated git worktree for features | `bash scripts/worktree-new.sh <name>` |
 | `worktree-list.sh` | Lists all active git worktrees | `bash scripts/worktree-list.sh` |
+| `refresh-all-predictions.ts` | Batch refresh featured seed predictions through the real generation pipeline | `npx tsx scripts/refresh-all-predictions.ts [--start N] [--delay MS]` |
 
 ## Invocation
 

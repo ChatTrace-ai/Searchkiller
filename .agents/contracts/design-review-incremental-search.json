@@ -1,0 +1,101 @@
+{
+  "id": "sprint-design-review-20260611",
+  "status": "completed",
+  "createdAt": "2026-06-11T17:05:00.000Z",
+  "updatedAt": "2026-06-11T17:15:00.000Z",
+  "activatedAt": "2026-06-11T17:05:00.000Z",
+  "keyword": "incremental-knowledge-search-design",
+  "sprintGoal": "评审 Incremental Knowledge Search 设计文档，确保其满足 Searchkiller 系统架构标准和 Evaluator 集成兼容性",
+  "dimensions": [
+    {
+      "name": "architecture_soundness",
+      "description": "架构健全性：数据流完整、模块划分清晰、权限层级正确、接口一致",
+      "weight": 0.20,
+      "hardThreshold": 6.0,
+      "targetScore": 8.0
+    },
+    {
+      "name": "probe_alignment",
+      "description": "Probe对齐度：设计是否覆盖 D1-D5 五个评估维度的关注点（API可靠性/搜索质量/数据完整性/缓存有效性/优雅降级）",
+      "weight": 0.25,
+      "hardThreshold": 5.0,
+      "targetScore": 7.5
+    },
+    {
+      "name": "edge_case_coverage",
+      "description": "边界覆盖度：Edge cases、安全性、超时处理、并发竞态、限流保护、可观测性",
+      "weight": 0.25,
+      "hardThreshold": 5.0,
+      "targetScore": 7.0
+    },
+    {
+      "name": "evaluator_compatibility",
+      "description": "Evaluator集成兼容性：BackendJudge/LLMJudge/BackendEvaluator probe 是否无破坏性影响",
+      "weight": 0.15,
+      "hardThreshold": 5.0,
+      "targetScore": 7.0
+    },
+    {
+      "name": "implementation_readiness",
+      "description": "实现就绪度：类型定义完整、接口签名明确、迁移方案可行、无歧义",
+      "weight": 0.15,
+      "hardThreshold": 6.0,
+      "targetScore": 8.0
+    }
+  ],
+  "globalThresholds": {
+    "minWeightedScore": 7.0,
+    "maxRounds": 3,
+    "autoApproveScore": 8.5,
+    "timeoutMinutes": 60
+  },
+  "negotiationHistory": [
+    {
+      "timestamp": "2026-06-11T17:05:00.000Z",
+      "actor": "system",
+      "action": "propose",
+      "changes": "Proposed design review contract with 5 dimensions: architecture_soundness(20%), probe_alignment(25%), edge_case_coverage(25%), evaluator_compatibility(15%), implementation_readiness(15%)"
+    },
+    {
+      "timestamp": "2026-06-11T17:05:00.000Z",
+      "actor": "user",
+      "action": "accept",
+      "changes": "Accepted contract for design document multi-round evaluation"
+    }
+  ],
+  "currentRound": 2,
+  "roundResults": [
+    {
+      "round": 1,
+      "timestamp": "2026-06-11T17:10:00.000Z",
+      "handoffId": "hoff-design-review-r1",
+      "dimensionScores": {
+        "architecture_soundness": 8.5,
+        "probe_alignment": 6.4,
+        "edge_case_coverage": 5.8,
+        "evaluator_compatibility": 6.5,
+        "implementation_readiness": 7.0
+      },
+      "weightedScore": 6.89,
+      "hardThresholdsPassed": true,
+      "contractSatisfied": false,
+      "evaluatorFeedback": "R1: 架构优秀但 Evaluator 集成缝隙明显。2个P0 (timeout + rate limit)、4个P1 (dedup + mapping + race + origin)、4个P2 待修复。加权分 6.89 < minWeightedScore 7.0。"
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-06-11T17:25:00.000Z",
+      "handoffId": "hoff-design-review-r2",
+      "dimensionScores": {
+        "architecture_soundness": 9.0,
+        "probe_alignment": 8.5,
+        "edge_case_coverage": 8.5,
+        "evaluator_compatibility": 8.5,
+        "implementation_readiness": 8.5
+      },
+      "weightedScore": 8.60,
+      "hardThresholdsPassed": true,
+      "contractSatisfied": true,
+      "evaluatorFeedback": "R2: 所有10个findings已修复。v0.2.0设计文档质量显著提升。加权分8.60 >= autoApproveScore 8.5 → AUTO-APPROVED。残余3个P3级别问题不阻塞。"
+    }
+  ]
+}

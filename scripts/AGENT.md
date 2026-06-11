@@ -11,6 +11,7 @@ SSOT verification and automation tooling (L5 in permission hierarchy).
 | uniformize.py | Auto-generate stubs for missing AGENT.md files |
 | worktree-new.sh | Create isolated git worktree for feature development |
 | worktree-list.sh | List all active git worktrees |
+| refresh-all-predictions.ts | Batch refresh featured predictions via lib/prediction-generator |
 
 ## Boundaries
 - reads: entire repository (all directories and files)

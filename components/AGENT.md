@@ -6,7 +6,6 @@ Presentation layer (L4 in permission hierarchy). UI-only React components.
 ## Contents
 | File | Renders |
 |------|---------|
-| SearchInput.tsx | Keyword input form |
 | StreamingReport.tsx | Live Markdown report panel |
 | MindMap.tsx | react-d3-tree visualization |
 | SourceCard.tsx | Reference source links |

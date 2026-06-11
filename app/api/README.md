@@ -21,6 +21,5 @@ Next.js Route Handlers for research, prediction, and evaluation workflows.
 
 `/api/research/fetch` creates an in-memory session keyed by `sessionId`. The `report` and `mindmap` routes consume that session's cached context for streaming generation.
 
-Prediction v1 uses a process-local mock repository with 32 featured records and
-a two-second simulated generation cycle. It is API-compatible with a future
-persistent repository.
+Prediction v1 persists records in Elasticsearch and runs the real generation
+pipeline (Plan → Exa → Analyze → Report) asynchronously on create and refresh.

@@ -1,0 +1,29 @@
+{
+  "id": "loop-1781160040898-82848c37",
+  "status": "active",
+  "keyword": "2026世界杯冠军预测",
+  "contractId": "sprint-1781159973976-032af4a4",
+  "currentRound": 1,
+  "maxRounds": 3,
+  "rounds": [
+    {
+      "round": 1,
+      "handoffId": "hoff-1781160040878-8c7791b1",
+      "score": 0,
+      "dimensionScores": {
+        "source_diversity": 10,
+        "data_completeness": 10,
+        "search_coverage": 10,
+        "report_structure": 10,
+        "pipeline_metrics": 5
+      },
+      "feedback": "**总评**: Backend: 14/15 checks passed, 16 sources, 22 citations, report 4.1k chars\n\n**评分**: source_diversity=10 | data_completeness=10 | search_coverage=10 | report_structure=10 | pipeline_metrics=5\n\n**优点**:\n  + source_diversity: 10.0/10 (3/3 checks)\n  + data_completeness: 10.0/10 (4/4 checks)\n  + search_coverage: 10.0/10 (2/2 checks)\n\n**不足**:\n\n**改进建议**:\n  1. [pipeline_metrics] Report generation < 120s: unknown",
+      "contractSatisfied": false,
+      "timestamp": "2026-06-11T06:40:40.898Z"
+    }
+  ],
+  "bestRound": 1,
+  "bestScore": 0,
+  "createdAt": "2026-06-11T06:40:40.898Z",
+  "updatedAt": "2026-06-11T06:40:40.898Z"
+}

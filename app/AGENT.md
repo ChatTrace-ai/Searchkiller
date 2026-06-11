@@ -17,7 +17,7 @@ Next.js App Router layer (L2 in permission hierarchy).
 | api/research/fetch/route.ts | API | Exa + ES context retrieval |
 | api/research/report/route.ts | API | Markdown report stream (Gemini Pro) |
 | api/research/mindmap/route.ts | API | Mind-map JSON stream (Gemini Pro) |
-| api/predictions/* | API | Prediction v1 mock endpoints |
+| api/predictions/* | API | Prediction v1 endpoints (ES-backed, real generation pipeline) |
 
 ## Boundaries
 - reads: lib/ (L3)

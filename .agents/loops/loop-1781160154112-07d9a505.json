@@ -1,0 +1,31 @@
+{
+  "id": "loop-1781160154112-07d9a505",
+  "status": "approved",
+  "keyword": "2026世界杯冠军预测",
+  "contractId": "sprint-1781160095911-62c414e7",
+  "currentRound": 1,
+  "maxRounds": 3,
+  "rounds": [
+    {
+      "round": 1,
+      "handoffId": "hoff-1781160154103-5bf61dda",
+      "score": 9.25,
+      "dimensionScores": {
+        "source_diversity": 10,
+        "data_completeness": 10,
+        "search_coverage": 10,
+        "report_structure": 10,
+        "pipeline_metrics": 5
+      },
+      "feedback": "**总评**: Backend: 14/15 checks passed, 17 sources, 22 citations, report 3.5k chars\n\n**评分**: source_diversity=10 | data_completeness=10 | search_coverage=10 | report_structure=10 | pipeline_metrics=5\n\n**优点**:\n  + source_diversity: 10.0/10 (3/3 checks)\n  + data_completeness: 10.0/10 (4/4 checks)\n  + search_coverage: 10.0/10 (2/2 checks)\n\n**不足**:\n\n**改进建议**:\n  1. [pipeline_metrics] Report generation < 120s: unknown",
+      "contractSatisfied": true,
+      "timestamp": "2026-06-11T06:42:34.112Z"
+    }
+  ],
+  "bestRound": 1,
+  "bestScore": 9.25,
+  "createdAt": "2026-06-11T06:42:34.113Z",
+  "updatedAt": "2026-06-11T06:42:34.113Z",
+  "completedAt": "2026-06-11T06:42:34.113Z",
+  "completionReason": "Auto-approved: weighted score 9.25 >= 9"
+}

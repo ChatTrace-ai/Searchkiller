@@ -1,7 +1,7 @@
 # refresh/ — Agent Manifest
 
 ## Role
-Restart mock prediction generation.
+Restart real prediction generation pipeline.
 
 ## Contents
 | File | Description |

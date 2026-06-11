@@ -18,10 +18,10 @@ REST API surface for the research pipeline.
 
 ## Boundaries
 - reads: lib/gemini, lib/exa, lib/elasticsearch, lib/schemas, lib/prediction-types, agents/recycle
-- writes: in-memory research sessions, in-memory prediction records, .agents/ evaluation state
+- writes: in-memory research sessions, Elasticsearch predictions index, .agents/ evaluation state
 - consumers: app pages and external API clients
 
 ## Data Flow
 plan(keyword) → fetch(keyword, subQueries) → parallel(report(sid), mindmap(sid))
 evaluate(initiate|finalize|stats) → agents/recycle → .agents/
-predictions(popular|create|detail|refresh) → predictions/store
+predictions(popular|create|detail|refresh) → lib/prediction-store
