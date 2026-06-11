@@ -48,7 +48,8 @@ test.describe('Prediction homepage', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
 
-  test('shows backend generation stages while a prediction is processing', async ({ page }) => {
+  test('renders the complete Mock stream while polling stays processing', async ({ page }) => {
+    await page.clock.install();
     await page.route('**/api/predictions/pred_progress_demo', async (route) => {
       await route.fulfill({
         status: 200,
@@ -71,8 +72,128 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByRole('heading', {
       name: 'Will the multilingual launch ship this month?',
     })).toBeVisible();
-    await expect(page.locator('#prediction-progress-heading')).toHaveText('Estimating probabilities');
-    await expect(page.getByText('2 of 4')).toBeVisible();
-    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '70');
+    await expect(page.getByText('Preview stream')).toBeVisible();
+
+    await page.clock.fastForward(13_000);
+
+    await expect(page.locator('#prediction-progress-heading')).toHaveText('Writing the report');
+    await expect(page.getByRole('heading', { name: 'Search queries' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reference sources' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Draft probabilities' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Analysis report' })).toBeVisible();
+    await expect(page.getByText('Leading outcome', { exact: true })).toBeVisible();
+    await expect(page.getByText('Preliminary assessment')).toBeVisible();
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '90');
+  });
+
+  test('uses polling as final authority and switches to completed detail', async ({ page }) => {
+    await page.clock.install();
+    let requestCount = 0;
+
+    await page.route('**/api/predictions/pred_poll_complete', async (route) => {
+      requestCount += 1;
+      if (requestCount === 1) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'pred_poll_complete',
+            question: 'Will polling publish the final result?',
+            status: 'processing',
+            progress: {
+              stage: 'planning',
+              message: 'Planning focused research queries',
+            },
+            updatedAt: '2026-06-11T10:00:00Z',
+          }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'pred_poll_complete',
+          question: 'Will polling publish the final result?',
+          category: 'General',
+          status: 'completed',
+          confidence: {
+            level: 'medium',
+            score: 65,
+            explanation: 'The final response came from the detail endpoint.',
+          },
+          outcomes: [
+            {
+              id: 'yes',
+              rank: 1,
+              label: 'Yes',
+              probability: 65,
+              change: 0,
+              rationale: 'Polling returned the completed prediction.',
+              sourceIds: [],
+            },
+            {
+              id: 'no',
+              rank: 2,
+              label: 'No',
+              probability: 35,
+              change: 0,
+              rationale: 'The alternative remains possible.',
+              sourceIds: [],
+            },
+          ],
+          sources: [],
+          summary: ['Polling remains the final source of truth.'],
+          report: '## Final result\n\nThe completed detail replaced the stream preview.',
+          createdAt: '2026-06-11T10:00:00Z',
+          updatedAt: '2026-06-11T10:00:02Z',
+        }),
+      });
+    });
+
+    await page.goto('/prediction/pred_poll_complete');
+    await expect(page.getByText('Forecast in progress')).toBeVisible();
+
+    await page.clock.fastForward(2_100);
+
+    await expect(page.getByText('Analysis summary')).toBeVisible();
+    await expect(page.getByText('Polling remains the final source of truth.')).toBeVisible();
+    await expect(page.getByText('Forecast in progress')).toHaveCount(0);
+  });
+
+  test('keeps the completed Mock stream readable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.clock.install();
+    await page.route('**/api/predictions/pred_mobile_stream', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'pred_mobile_stream',
+          question: 'Will the mobile prediction stream remain readable?',
+          status: 'processing',
+          progress: {
+            stage: 'planning',
+            message: 'Planning focused research queries',
+          },
+          updatedAt: '2026-06-11T10:00:00Z',
+        }),
+      });
+    });
+
+    await page.goto('/prediction/pred_mobile_stream');
+    await expect(page.getByRole('heading', {
+      name: 'Will the mobile prediction stream remain readable?',
+    })).toBeVisible();
+    await page.clock.fastForward(1_500);
+    await expect(page.getByRole('heading', { name: 'Search queries' })).toBeVisible();
+    await page.clock.fastForward(12_000);
+
+    await expect(page.getByRole('heading', { name: 'Draft probabilities' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Analysis report' })).toBeVisible();
+    expect(await page.evaluate(() => (
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    ))).toBe(true);
   });
 });

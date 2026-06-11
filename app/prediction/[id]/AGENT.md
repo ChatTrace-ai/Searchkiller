@@ -6,7 +6,7 @@ Dynamic prediction detail route.
 ## Contents
 | File | Description |
 |------|-------------|
-| page.tsx | Client-side detail fetch, polling, staged progress, and error states |
+| page.tsx | Polling orchestration, stream hookup, final detail, and error states |
 
 ## Boundaries
 - reads: components/, lib/prediction-types

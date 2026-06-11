@@ -1,11 +1,12 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { PredictionDetailView } from '@/components/PredictionDetailView';
 import { PredictionHeader } from '@/components/PredictionHeader';
 import { PredictionProgressView } from '@/components/PredictionProgressView';
 import type { PredictionDetail, PredictionProgress } from '@/lib/prediction-types';
 import { useCreatePrediction } from '../../use-create-prediction';
+import { usePredictionStream } from '../use-prediction-stream';
 
 export default function PredictionPage({
   params,
@@ -17,6 +18,18 @@ export default function PredictionPage({
   const [prediction, setPrediction] = useState<PredictionDetail | null>(null);
   const [progress, setProgress] = useState<PredictionProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  const refreshPrediction = useCallback(() => {
+    setRefreshToken((current) => current + 1);
+  }, []);
+
+  const { mode, streamAvailable, streamState } = usePredictionStream({
+    predictionId: id,
+    progress,
+    onCompleted: refreshPrediction,
+    onFailed: setError,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +66,7 @@ export default function PredictionPage({
       cancelled = true;
       if (timeout) clearTimeout(timeout);
     };
-  }, [id]);
+  }, [id, refreshToken]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -65,7 +78,12 @@ export default function PredictionPage({
         </div>
       )}
       {!error && !prediction && (
-        <PredictionProgressView progress={progress} />
+        <PredictionProgressView
+          progress={progress}
+          streamState={streamState}
+          streamMode={mode}
+          streamAvailable={streamAvailable}
+        />
       )}
       {prediction && <PredictionDetailView prediction={prediction} />}
     </div>

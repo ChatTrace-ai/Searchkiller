@@ -17,6 +17,7 @@ Unit tests, integration tests, and E2E pipeline tests for all harness components
 | predictions.api.test.ts | api | Prediction v1 pagination, lifecycle, refresh, and errors |
 | homepage.ui.test.ts | ui | Homepage rendering and navigation tests |
 | agent.state.test.ts | state | .agents/ directory integrity and lifecycle tests |
+| prediction-stream.state.test.ts | state | Frontend stream reducer and revision ordering |
 
 ## Running
 ```bash

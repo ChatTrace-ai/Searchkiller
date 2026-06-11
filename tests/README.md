@@ -40,6 +40,9 @@ npx playwright test --project=ui
 create/reuse behavior, processing completion, refresh conflicts, probability
 totals, and unified errors without external API keys.
 
+`prediction-stream.state.test.ts` validates stream snapshot restoration, report
+delta accumulation, and duplicate or out-of-order revision rejection.
+
 ## Verified Performance
 
 | Test | Duration | Key Metric |
