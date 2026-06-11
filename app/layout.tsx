@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Searchkiller | AI Prediction Explorer',
+  title: "Laplace's Demon | AI Prediction Explorer",
   description: 'Explore evidence-based forecasts, probabilities, and source-backed analysis.',
 };
 

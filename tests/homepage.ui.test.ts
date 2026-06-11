@@ -3,10 +3,18 @@ import { test, expect } from '@playwright/test';
 test.describe('Prediction homepage', () => {
   test('renders prediction search and the first 16 cards', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('Searchkiller').first()).toBeVisible();
+    await expect(page.getByText("Laplace's Demon").first()).toBeVisible();
     await expect(page.locator('h1')).toContainText('Search anything you want to predict');
     await expect(page.getByLabel('Prediction question')).toBeVisible();
     await expect(page.getByLabel('Prediction question')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/ChatTrace-ai/Searchkiller',
+    );
+    await expect(page.getByRole('link', { name: 'Powered by Gemini' })).toHaveAttribute(
+      'href',
+      'https://ai.google.dev/gemini-api',
+    );
     await expect(page.locator('a[href^="/prediction/"]')).toHaveCount(16);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });

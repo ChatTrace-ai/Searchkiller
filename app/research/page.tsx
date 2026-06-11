@@ -118,7 +118,7 @@ function ResearchContent() {
   return (
     <div className="h-screen flex flex-col bg-white">
       <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
-        <a href="/" className="text-google-blue font-semibold">Searchkiller</a>
+        <a href="/" className="text-google-blue font-semibold">Laplace&apos;s Demon</a>
         <span className="text-sm text-gray-600 truncate max-w-md">{keyword}</span>
         <div className="flex items-center gap-2">
           {phase === 'streaming' && (

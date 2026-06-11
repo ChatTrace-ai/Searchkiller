@@ -9,7 +9,8 @@ Client-side React components for the research dashboard interface.
 | `StreamingReport.tsx` | Live Markdown report panel with typing cursor animation |
 | `SourceCard.tsx` | Clickable reference source chips/cards |
 | `LoadingStates.tsx` | Animated loading indicators (pulsing dots + status text) |
-| `BrandMark.tsx` | Shared Searchkiller brand treatment |
+| `BrandMark.tsx` | Shared Laplace's Demon brand treatment |
+| `SiteFooter.tsx` | Product description and external project links |
 | `PredictionSearch.tsx` | Reusable prediction search form |
 | `PredictionHeader.tsx` | Detail-page navigation and search |
 | `PredictionCard.tsx` | Popular prediction card with leading outcomes |

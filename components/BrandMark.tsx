@@ -7,7 +7,7 @@ export function BrandMark() {
       <span className="grid h-9 w-9 place-items-center rounded-lg border-2 border-blue-600 text-blue-600">
         <Play className="h-5 w-5 fill-blue-600" />
       </span>
-      <span className="text-xl font-bold">Searchkiller</span>
+      <span className="whitespace-nowrap text-lg font-bold sm:text-xl">Laplace&apos;s Demon</span>
     </Link>
   );
 }

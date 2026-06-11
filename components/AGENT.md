@@ -10,7 +10,8 @@ Presentation layer (L4 in permission hierarchy). UI-only React components.
 | MindMap.tsx | react-d3-tree visualization |
 | SourceCard.tsx | Reference source links |
 | LoadingStates.tsx | Phase-aware loading animation |
-| BrandMark.tsx | Shared Searchkiller brand link |
+| BrandMark.tsx | Shared Laplace's Demon brand link |
+| SiteFooter.tsx | Product description and external project links |
 | PredictionSearch.tsx | Prediction question form |
 | PredictionHeader.tsx | Detail-page header and search |
 | PredictionCard.tsx | Popular prediction summary card |

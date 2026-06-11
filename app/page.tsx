@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { PaginatedPredictionGrid } from '@/components/PaginatedPredictionGrid';
 import { PredictionHeader } from '@/components/PredictionHeader';
 import { PredictionSearch } from '@/components/PredictionSearch';
+import { SiteFooter } from '@/components/SiteFooter';
 import { useCreatePrediction } from './use-create-prediction';
 import { usePredictionPagination } from './use-prediction-pagination';
 
@@ -63,6 +64,7 @@ export default function HomePage() {
         </div>
         <PaginatedPredictionGrid {...pagination} />
       </section>
+      <SiteFooter />
     </main>
   );
 }
