@@ -182,7 +182,7 @@ export class BackendJudge implements IJudge {
     });
 
     // --- D5: pipeline_metrics ---
-    const reportDuration = handoff.output.metrics?.reportDurationMs ?? 0;
+    const reportDuration = handoff.metrics?.reportDurationMs ?? 0;
     checks.push({
       dimension: 'pipeline_metrics',
       check: 'Report generation < 120s',

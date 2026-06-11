@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Searchkiller Cloud Run 部署流程</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #09090b;
+        --panel: #18181b;
+        --panel-2: #27272a;
+        --text: #f4f4f5;
+        --muted: #a1a1aa;
+        --border: #3f3f46;
+        --accent: #60a5fa;
+        --ok: #34d399;
+        --warn: #fbbf24;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.65;
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.25;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 2.25rem;
+      }
+
+      h2 {
+        margin-top: 36px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+        font-size: 1.45rem;
+      }
+
+      h3 {
+        margin-top: 24px;
+        font-size: 1.08rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+
+      code {
+        color: var(--text);
+      }
+
+      pre {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #0f172a;
+        padding: 16px;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        padding: 16px;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .value {
+        margin-top: 4px;
+        color: var(--text);
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+
+      .ok {
+        color: var(--ok);
+      }
+
+      .warn {
+        color: var(--warn);
+      }
+
+      .timeline {
+        padding-left: 20px;
+      }
+
+      .timeline li {
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Searchkiller Cloud Run 部署流程</h1>
+        <p>
+          这是一份面向 Searchkiller 的 Cloud Run 部署 SOP，覆盖镜像构建、服务部署、Secret 配置、权限授权、
+          验证方式和常见构建问题。命令中的 <code>PROJECT_ID</code>、<code>REGION</code>、<code>SERVICE</code>
+          等变量按目标环境替换。
+        </p>
+        <div class="summary">
+          <section class="card">
+            <div class="label">部署平台</div>
+            <div class="value">Google Cloud Run</div>
+          </section>
+          <section class="card">
+            <div class="label">镜像仓库</div>
+            <div class="value">Artifact Registry</div>
+          </section>
+          <section class="card">
+            <div class="label">运行形态</div>
+            <div class="value">Next.js standalone Docker image</div>
+          </section>
+          <section class="card">
+            <div class="label">默认服务名</div>
+            <div class="value">searchkiller</div>
+          </section>
+        </div>
+      </header>
+
+      <section>
+        <h2>部署前检查</h2>
+        <ul>
+          <li>确认目标 GCP 项目已开通 billing，并且当前账号有 Cloud Run、Cloud Build、Artifact Registry、Secret Manager 和 IAM 管理权限。</li>
+          <li>确认项目可以通过 <code>npm run build</code> 完成生产构建。</li>
+          <li>确认 <code>next.config.ts</code> 使用 <code>output: 'standalone'</code>，Dockerfile 会运行 standalone server。</li>
+          <li>准备运行时环境变量：<code>GOOGLE_VERTEX_PROJECT</code>、<code>GOOGLE_VERTEX_LOCATION</code>、<code>EXA_API_KEY</code>、<code>ES_CLOUD_ID</code>、<code>ES_API_KEY</code>。</li>
+          <li>不要把敏感环境变量写进镜像，也不要提交到 git；生产环境统一通过 Secret Manager 注入。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>部署命令</h2>
+        <h3>1. 设置部署变量</h3>
+        <pre><code>PROJECT_ID="your-gcp-project-id"
+REGION="us-central1"
+SERVICE="searchkiller"
+REPO="searchkiller"
+IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/app:latest"
+
+gcloud config set project "$PROJECT_ID"</code></pre>
+
+        <h3>2. 确认 gcloud 项目和账号</h3>
+        <pre><code>gcloud config get-value project
+gcloud auth list --filter=status:ACTIVE --format='value(account)'</code></pre>
+
+        <h3>3. 启用依赖的 GCP 服务并创建镜像仓库</h3>
+        <pre><code>gcloud services enable \
+  run.googleapis.com \
+  cloudbuild.googleapis.com \
+  artifactregistry.googleapis.com \
+  secretmanager.googleapis.com \
+  aiplatform.googleapis.com
+
+gcloud artifacts repositories create "$REPO" \
+  --repository-format=docker \
+  --location="$REGION" \
+  --description="Searchkiller Docker images"</code></pre>
+
+        <h3>4. Cloud Build 构建并推送镜像</h3>
+        <pre><code>gcloud builds submit --tag "$IMAGE" .</code></pre>
+
+        <h3>5. 授权 Cloud Run 调用 Vertex AI 并部署</h3>
+        <pre><code>PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+RUN_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member "serviceAccount:$RUN_SA" \
+  --role roles/aiplatform.user \
+  --quiet
+
+gcloud run deploy "$SERVICE" \
+  --image "$IMAGE" \
+  --region "$REGION" \
+  --platform managed \
+  --port 8080 \
+  --memory 1Gi \
+  --cpu 2 \
+  --timeout 300 \
+  --allow-unauthenticated \
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_REGION=$REGION,GOOGLE_VERTEX_PROJECT=$PROJECT_ID,GOOGLE_VERTEX_LOCATION=$REGION"</code></pre>
+      </section>
+
+      <section>
+        <h2>Secret 配置</h2>
+        <p>
+          Cloud Build 和 Cloud Run 不会自动读取开发机环境变量。部署时不要把敏感值打进镜像，
+          应将密钥写入 Secret Manager，再绑定到 Cloud Run 环境变量。
+        </p>
+        <h3>创建 Secret</h3>
+        <pre><code>printf '%s' "$EXA_API_KEY_VALUE" | gcloud secrets create exa-api-key --data-file=-
+printf '%s' "$ES_CLOUD_ID_VALUE" | gcloud secrets create es-cloud-id --data-file=-
+printf '%s' "$ES_API_KEY_VALUE" | gcloud secrets create es-api-key --data-file=-</code></pre>
+
+        <h3>更新已有 Secret</h3>
+        <pre><code>printf '%s' "$EXA_API_KEY_VALUE" | gcloud secrets versions add exa-api-key --data-file=-
+printf '%s' "$ES_CLOUD_ID_VALUE" | gcloud secrets versions add es-cloud-id --data-file=-
+printf '%s' "$ES_API_KEY_VALUE" | gcloud secrets versions add es-api-key --data-file=-</code></pre>
+
+        <h3>授予 Cloud Run 服务账号读取 Secret 的权限</h3>
+        <pre><code>PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+RUN_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+
+for s in exa-api-key es-cloud-id es-api-key; do
+  gcloud secrets add-iam-policy-binding "$s" \
+    --member "serviceAccount:$RUN_SA" \
+    --role roles/secretmanager.secretAccessor \
+    --quiet
+done</code></pre>
+
+        <h3>绑定 Secret 到 Cloud Run</h3>
+        <pre><code>gcloud run services update "$SERVICE" \
+  --region "$REGION" \
+  --set-secrets EXA_API_KEY=exa-api-key:latest,ES_CLOUD_ID=es-cloud-id:latest,ES_API_KEY=es-api-key:latest</code></pre>
+      </section>
+
+      <section>
+        <h2>验证命令</h2>
+        <h3>首页健康检查</h3>
+        <pre><code>URL=$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')
+curl -s -o /dev/null -w '%{http_code} %{url_effective}\n' "$URL"</code></pre>
+
+        <h3>Vertex AI 规划接口</h3>
+        <pre><code>curl -s -X POST "$URL/api/plan" \
+  -H 'Content-Type: application/json' \
+  -d '{"keyword":"AI Agent 测试"}'</code></pre>
+
+        <h3>Exa / Elasticsearch 检索接口</h3>
+        <pre><code>curl -s -X POST "$URL/api/research/fetch" \
+  -H 'Content-Type: application/json' \
+  -d '{"keyword":"AI Agent 测试","subQueries":["AI Agent testing methodologies","AI Agent reliability evaluation","AI Agent benchmark frameworks"]}'</code></pre>
+      </section>
+
+      <section>
+        <h2>常见构建问题</h2>
+        <ol class="timeline">
+          <li>
+            <strong><code>agents/evaluator/backend-judge.ts</code></strong>：
+            将 <code>handoff.output.metrics</code> 改为 <code>handoff.metrics</code>。
+            原因是 <code>HandoffDocument</code> 的 canonical 类型中 <code>metrics</code> 位于顶层，错误访问会导致 TypeScript 构建失败。
+          </li>
+          <li>
+            <strong><code>lib/gemini.ts</code></strong>：
+            改用 <code>createVertex</code> 并显式传入 <code>location</code> 和 <code>project</code>。
+            原因是 Cloud Build 阶段没有开发机环境变量，默认 Vertex provider 会在 Next.js 收集页面数据时因缺少
+            <code>GOOGLE_VERTEX_LOCATION</code> 报错。
+          </li>
+          <li>
+            <strong><code>Dockerfile</code></strong>：
+            在 <code>npm run build</code> 前增加 <code>RUN mkdir -p public</code>。
+            原因是项目当前没有 <code>public/</code> 目录，但 production stage 会复制 <code>/app/public</code>。
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>注意事项</h2>
+        <ul>
+          <li>开发环境变量不会自动进入 Cloud Build 或 Cloud Run；生产环境必须显式配置环境变量或 Secret。</li>
+          <li>Secret 更新后需要重新执行 <code>gcloud run services update ... --set-secrets</code> 或添加新 secret version 后重新部署 revision。</li>
+          <li>Cloud Run revision 的运行服务账号至少需要 <code>roles/aiplatform.user</code> 和对应 secret 的 <code>roles/secretmanager.secretAccessor</code>。</li>
+          <li><code>.github/workflows/deploy.yml</code> 当前仍引用旧目录 <code>Hackson/G-RapidAgent</code>，如要启用 CI/CD，需要单独修正。</li>
+          <li>线上服务当前允许匿名访问：<code>--allow-unauthenticated</code>。如果后续涉及私有数据，应加认证或限制 ingress。</li>
+          <li>Cloud Run 使用 <code>--timeout 300</code>，长报告生成如果超过 5 分钟仍会超时，需要改成后台任务或提高超时配置。</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
