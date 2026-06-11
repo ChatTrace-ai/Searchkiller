@@ -115,7 +115,11 @@ function buildDetail(seed: PredictionSeed, now = MOCK_UPDATED_AT): PredictionDet
   }
 
   const outcomes = completeOutcomes
-    .sort((a, b) => b.probability - a.probability)
+    .sort((a, b) => {
+      if (a.label === 'Other outcomes') return 1;
+      if (b.label === 'Other outcomes') return -1;
+      return b.probability - a.probability;
+    })
     .map((outcome, index) => ({
       id: slugify(outcome.label) || `outcome-${index + 1}`,
       rank: index + 1,

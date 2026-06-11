@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Searchkiller 预测 API v1</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --panel: #ffffff;
+      --soft: #f8fafc;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --green: #059669;
+      --amber: #d97706;
+      --red: #dc2626;
+      --code: #0f172a;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f8fafc;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 22px;
+      border-right: 1px solid var(--line);
+      background: rgba(255,255,255,.96);
+      overflow-y: auto;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; }
+    .brand-mark {
+      display: grid; place-items: center; width: 34px; height: 34px;
+      border: 2px solid var(--blue); border-radius: 8px; color: var(--blue);
+    }
+    .version {
+      display: inline-block; margin-top: 12px; padding: 4px 8px;
+      color: var(--blue); background: var(--blue-soft); border-radius: 4px;
+      font-size: 12px; font-weight: 700;
+    }
+    .nav-title { margin: 28px 0 8px; color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .nav a { display: block; padding: 8px 10px; border-radius: 6px; color: #475569; font-size: 14px; }
+    .nav a:hover { color: var(--blue); background: var(--blue-soft); }
+    .content { width: 100%; max-width: 1180px; margin: 0 auto; padding: 48px 42px 96px; }
+    .hero {
+      padding: 42px; color: white; border-radius: 12px;
+      background: linear-gradient(120deg, #0f172a 0%, #172554 58%, #1d4ed8 100%);
+      box-shadow: 0 20px 50px rgba(15,23,42,.18);
+    }
+    .eyebrow { color: #93c5fd; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    h1 { margin: 10px 0 12px; font-size: clamp(34px, 5vw, 58px); line-height: 1.05; letter-spacing: 0; }
+    .hero p { max-width: 760px; margin: 0; color: #dbeafe; font-size: 17px; }
+    .base-url {
+      display: flex; align-items: center; gap: 10px; width: fit-content;
+      margin-top: 24px; padding: 10px 14px; border: 1px solid rgba(255,255,255,.25);
+      border-radius: 6px; background: rgba(15,23,42,.42); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    section { scroll-margin-top: 24px; margin-top: 58px; }
+    h2 { margin: 0 0 10px; font-size: 28px; }
+    h3 { margin: 0; font-size: 18px; }
+    .lead { max-width: 820px; margin: 0 0 24px; color: var(--muted); }
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .card p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .flow-step { position: relative; padding: 18px; border: 1px solid #bfdbfe; border-radius: 8px; background: var(--blue-soft); }
+    .flow-step:not(:last-child)::after { content: "→"; position: absolute; right: -13px; top: 34%; z-index: 2; color: var(--blue); font-weight: 900; }
+    .flow-step strong { display: block; color: var(--blue); font-size: 13px; }
+    .flow-step span { display: block; margin-top: 4px; font-size: 14px; }
+    .endpoint { margin-top: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .endpoint-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .method { min-width: 56px; padding: 5px 8px; border-radius: 4px; color: white; text-align: center; font-size: 12px; font-weight: 900; }
+    .get { background: var(--green); } .post { background: var(--blue); }
+    .path { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
+    .endpoint-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr); }
+    .endpoint-copy { padding: 22px; }
+    .endpoint-example { min-width: 0; padding: 22px; background: var(--soft); border-left: 1px solid var(--line); }
+    .tag { display: inline-block; padding: 3px 7px; border-radius: 4px; background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; }
+    .status { margin-right: 6px; }
+    .s200 { color: var(--green); } .s202 { color: var(--blue); } .s400 { color: var(--red); } .s409 { color: var(--amber); }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #475569; font-size: 12px; text-transform: uppercase; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre {
+      position: relative; margin: 10px 0 0; padding: 16px; overflow: auto;
+      color: #dbeafe; background: var(--code); border-radius: 6px; font-size: 12px; line-height: 1.65;
+    }
+    .copy {
+      position: absolute; top: 8px; right: 8px; padding: 5px 8px;
+      border: 1px solid #334155; border-radius: 4px; color: #cbd5e1; background: #1e293b; cursor: pointer; font-size: 11px;
+    }
+    .state { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .state-node { padding: 12px 16px; border-radius: 6px; font-weight: 800; }
+    .processing { color: #1d4ed8; background: #dbeafe; }
+    .completed { color: #047857; background: #d1fae5; }
+    .failed { color: #b91c1c; background: #fee2e2; }
+    .callout { padding: 16px 18px; border-left: 4px solid var(--blue); background: var(--blue-soft); color: #1e3a8a; }
+    .try-box { padding: 22px; border: 1px solid #bfdbfe; border-radius: 8px; background: #f8fbff; }
+    .controls { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; gap: 10px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; }
+    .send { padding: 10px 18px; border: 0; border-radius: 6px; color: white; background: var(--blue); cursor: pointer; font-weight: 800; }
+    .response-meta { margin-top: 14px; color: var(--muted); font-size: 13px; }
+    footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    @media (max-width: 900px) {
+      .shell { display: block; }
+      .sidebar { position: static; width: 100%; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .nav { display: flex; gap: 4px; overflow-x: auto; }
+      .nav-title { display: none; }
+      .nav a { white-space: nowrap; }
+      .content { padding: 28px 18px 70px; }
+      .hero { padding: 28px 22px; }
+      .grid-2, .grid-3, .flow, .endpoint-body { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -18px; }
+      .endpoint-example { border-left: 0; border-top: 1px solid var(--line); }
+      .controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark">▶</span>
+        <span>Searchkiller</span>
+      </a>
+      <span class="version">预测 API v1 · Mock</span>
+      <div class="nav-title">快速导航</div>
+      <nav class="nav">
+        <a href="#overview">当前实现</a>
+        <a href="#workflow">请求流程</a>
+        <a href="#models">数据模型</a>
+        <a href="#popular">热门预测</a>
+        <a href="#create">创建预测</a>
+        <a href="#detail">预测详情</a>
+        <a href="#refresh">刷新预测</a>
+        <a href="#errors">错误格式</a>
+        <a href="#integration">接入指南</a>
+        <a href="#try">在线调试</a>
+      </nav>
+    </aside>
+
+    <div class="content">
+      <header class="hero">
+        <div class="eyebrow">面向开发者的可视化接口文档</div>
+        <h1>预测 API v1</h1>
+        <p>帮助前端和后端开发者快速理解当前预测生命周期、请求响应契约、游标分页、轮询方式以及 Mock 行为。</p>
+        <div class="base-url"><strong>基础路径</strong><span>/api</span></div>
+      </header>
+
+      <section id="overview">
+        <h2>当前已经实现什么</h2>
+        <p class="lead">当前接口已经可以直接供前端使用，但数据存储和预测生成暂时由进程内存模拟。后续替换为 Elasticsearch 和真实模型生成时，请求与响应结构应保持不变。</p>
+        <div class="grid grid-3">
+          <div class="card"><h3>32 条热门预测</h3><p>共两页，每页 16 条，用于首页开发和演示。</p></div>
+          <div class="card"><h3>2 秒模拟生成</h3><p>新建或刷新的预测先进入 processing，随后自动变成 completed。</p></div>
+          <div class="card"><h3>进程内临时状态</h3><p>Next.js 进程重启后数据会重置，当前不能作为持久化数据库使用。</p></div>
+        </div>
+      </section>
+
+      <section id="workflow">
+        <h2>前端请求流程</h2>
+        <p class="lead">首页读取预测摘要；用户提交问题后创建或复用预测；详情页持续轮询，直到结果生成完成。</p>
+        <div class="flow">
+          <div class="flow-step"><strong>1 · 加载首页</strong><span>GET 热门预测，每页 16 条</span></div>
+          <div class="flow-step"><strong>2 · 提交问题</strong><span>POST 用户想预测的问题</span></div>
+          <div class="flow-step"><strong>3 · 页面跳转</strong><span>打开 /prediction/{id}</span></div>
+          <div class="flow-step"><strong>4 · 轮询详情</strong><span>按照 pollAfterMs 请求详情，直到 completed</span></div>
+        </div>
+      </section>
+
+      <section id="models">
+        <h2>核心数据模型</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>PredictionSummary</h3>
+            <p>用于首页卡片的轻量数据。</p>
+            <pre><button class="copy">复制</button><code>{
+  "id": "world-cup-2026",
+  "question": "Who will win the 2026 FIFA World Cup?",
+  "category": "Sports",
+  "icon": "trophy",
+  "status": "completed",
+  "topOutcomes": [
+    { "label": "Spain", "probability": 16.4, "icon": "🇪🇸" }
+  ],
+  "updatedAt": "2026-06-11T08:00:00.000Z"
+}</code></pre>
+          </div>
+          <div class="card">
+            <h3>PredictionDetail</h3>
+            <p>详情页渲染所需的完整预测结果。</p>
+            <pre><button class="copy">复制</button><code>{
+  "id": "world-cup-2026",
+  "status": "completed",
+  "confidence": {
+    "level": "high",
+    "score": 82,
+    "explanation": "Stable signals..."
+  },
+  "outcomes": [],
+  "sources": [],
+  "summary": [],
+  "report": "## Forecast analysis...",
+  "createdAt": "...",
+  "updatedAt": "..."
+}</code></pre>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:16px"><strong>概率约束：</strong>详情中的所有结果概率总和必须为 100，最多允许 ±0.1 的舍入误差。未列出的概率由 “Other outcomes” 补齐。</div>
+      </section>
+
+      <section id="popular">
+        <h2>热门预测列表</h2>
+        <div class="endpoint">
+          <div class="endpoint-head"><span class="method get">GET</span><span class="path">/api/predictions/popular</span><span class="tag">首页</span></div>
+          <div class="endpoint-body">
+            <div class="endpoint-copy">
+              <h3>返回热门预测摘要</h3>
+              <p class="lead">使用不透明游标分页。前端必须原样回传接口返回的 cursor，不要自行解析或拼接。</p>
+              <table>
+                <thead><tr><th>参数</th><th>必填</th><th>规则</th></tr></thead>
+                <tbody>
+                  <tr><td><code>cursor</code></td><td>否</td><td>第一页不传；后续原样回传 nextCursor</td></tr>
+                  <tr><td><code>limit</code></td><td>否</td><td>默认 16；必须是 1–32 的整数</td></tr>
+                  <tr><td><code>category</code></td><td>否</td><td>分类精确匹配，不区分大小写</td></tr>
+                </tbody>
+              </table>
+              <p><span class="status s200">200</span> 返回 items、nextCursor 和 hasMore。</p>
+              <p><span class="status s400">400</span> limit 或 cursor 无效。</p>
+            </div>
+            <div class="endpoint-example">
+              <strong>请求示例</strong>
+              <pre><button class="copy">复制</button><code>GET /api/predictions/popular?limit=16</code></pre>
+              <strong>响应示例</strong>
+              <pre><button class="copy">复制</button><code>{
+  "items": [PredictionSummary],
+  "nextCursor": "eyJvZmZzZXQiOjE2fQ",
+  "hasMore": true
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="create">
+        <h2>创建或复用预测</h2>
+        <div class="endpoint">
+          <div class="endpoint-head"><span class="method post">POST</span><span class="path">/api/predictions</span><span class="tag">用户操作</span></div>
+          <div class="endpoint-body">
+            <div class="endpoint-copy">
+              <h3>接收自然语言预测问题</h3>
+              <p class="lead">服务端会去除首尾空格，问题长度必须为 5–500 个字符。复用匹配时忽略大小写和标点差异。</p>
+              <div class="state">
+                <span class="state-node processing">processing</span><span>→ 模拟生成 2 秒 →</span><span class="state-node completed">completed</span>
+              </div>
+              <p><span class="status s200">200</span> 命中已有 completed 结果，直接复用。</p>
+              <p><span class="status s202">202</span> 已创建新的 Mock 生成任务。</p>
+              <p><span class="status s400">400</span> JSON 格式错误或问题长度不合法。</p>
+            </div>
+            <div class="endpoint-example">
+              <strong>请求体</strong>
+              <pre><button class="copy">复制</button><code>{
+  "question": "Who will win the 2026 FIFA World Cup?"
+}</code></pre>
+              <strong>新建预测响应</strong>
+              <pre><button class="copy">复制</button><code>{
+  "id": "pred_01JXYZ",
+  "status": "processing",
+  "reused": false,
+  "pollAfterMs": 2000
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="detail">
+        <h2>预测详情</h2>
+        <div class="endpoint">
+          <div class="endpoint-head"><span class="method get">GET</span><span class="path">/api/predictions/{id}</span><span class="tag">轮询接口</span></div>
+          <div class="endpoint-body">
+            <div class="endpoint-copy">
+              <h3>返回生成进度或完整详情</h3>
+              <p class="lead">processing 和 completed 都返回 HTTP 200。前端必须根据 JSON 中的 <code>status</code> 字段判断状态，不能只看 HTTP 状态码。</p>
+              <table>
+                <thead><tr><th>状态</th><th>前端处理方式</th></tr></thead>
+                <tbody>
+                  <tr><td><code>processing</code></td><td>展示进度，并在 2 秒后再次请求</td></tr>
+                  <tr><td><code>completed</code></td><td>渲染置信度、候选结果、来源、摘要和报告</td></tr>
+                  <tr><td><code>failed</code></td><td>预留状态；展示可恢复的失败页面</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="endpoint-example">
+              <strong>处理中响应</strong>
+              <pre><button class="copy">复制</button><code>{
+  "id": "pred_01JXYZ",
+  "question": "...",
+  "status": "processing",
+  "progress": {
+    "stage": "collecting_sources",
+    "message": "Collecting reference sources"
+  },
+  "updatedAt": "..."
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="refresh">
+        <h2>刷新预测</h2>
+        <div class="endpoint">
+          <div class="endpoint-head"><span class="method post">POST</span><span class="path">/api/predictions/{id}/refresh</span><span class="tag">可选功能</span></div>
+          <div class="endpoint-body">
+            <div class="endpoint-copy">
+              <h3>重新启动预测生成</h3>
+              <p class="lead">completed 预测会重新进入 2 秒的 processing 状态。热门预测仍永久有效；自定义预测会重新获得 24 小时的 Mock 有效期。</p>
+              <p><span class="status s202">202</span> 已开始刷新。</p>
+              <p><span class="status s409">409</span> 当前预测正在生成，不能重复刷新。</p>
+              <p><span class="status s400">404</span> 预测 ID 不存在。</p>
+            </div>
+            <div class="endpoint-example">
+              <strong>响应示例</strong>
+              <pre><button class="copy">复制</button><code>{
+  "id": "world-cup-2026",
+  "status": "processing",
+  "pollAfterMs": 2000
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="errors">
+        <h2>统一错误格式</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>响应结构</h3>
+            <pre><button class="copy">复制</button><code>{
+  "error": {
+    "code": "PREDICTION_NOT_FOUND",
+    "message": "Prediction was not found."
+  }
+}</code></pre>
+          </div>
+          <div class="card">
+            <h3>错误码</h3>
+            <table>
+              <tbody>
+                <tr><td>400</td><td><code>INVALID_REQUEST</code></td></tr>
+                <tr><td>404</td><td><code>PREDICTION_NOT_FOUND</code></td></tr>
+                <tr><td>409</td><td><code>PREDICTION_IN_PROGRESS</code></td></tr>
+                <tr><td>429</td><td><code>RATE_LIMITED</code>（预留）</td></tr>
+                <tr><td>500</td><td><code>GENERATION_FAILED</code>（预留）</td></tr>
+                <tr><td>503</td><td><code>SERVICE_UNAVAILABLE</code>（预留）</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="integration">
+        <h2>前后端接入指南</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>前端职责</h3>
+            <p>不要解析 cursor；每页展示 16 张卡片；使用返回的 ID 跳转；按照 <code>pollAfterMs</code> 轮询；根据 status 分支处理；向用户展示 API 错误信息。</p>
+            <pre><button class="copy">复制</button><code>const created = await fetch("/api/predictions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ question })
+}).then(r => r.json());
+
+router.push(`/prediction/${created.id}`);</code></pre>
+          </div>
+          <div class="card">
+            <h3>后端替换约束</h3>
+            <p>将进程内存替换为 Elasticsearch 时，不要改变接口请求和响应结构。需要持久化标准化问题、状态、详情、过期时间和生成状态。</p>
+            <pre><button class="copy">复制</button><code>// 以下接口保持稳定：
+GET  /predictions/popular
+POST /predictions
+GET  /predictions/:id
+POST /predictions/:id/refresh
+
+// 仅替换 store 的内部实现。</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="try">
+        <h2>在线调试本地 API</h2>
+        <p class="lead">当此文档由正在运行的 Searchkiller 项目提供时，可直接请求当前本地接口。结果会显示在下方，不会修改任何外部系统。</p>
+        <div class="try-box">
+          <div class="controls">
+            <select id="tryMethod">
+              <option value="popular">GET 热门预测</option>
+              <option value="detail">GET 预测详情</option>
+              <option value="create">POST 创建预测</option>
+              <option value="refresh">POST 刷新预测</option>
+            </select>
+            <input id="tryValue" value="world-cup-2026" aria-label="API 调试参数">
+            <button class="send" id="sendRequest">发送请求</button>
+          </div>
+          <div class="response-meta" id="responseMeta">选择操作并发送请求。</div>
+          <pre><code id="responseBody">{}</code></pre>
+        </div>
+      </section>
+
+      <footer>
+        当前实现以路由处理器和 <code>lib/prediction-types.ts</code> 为准。Mock 行为可能继续调整，但公开的请求与响应契约应保持稳定。
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll(".copy").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var code = button.parentElement.querySelector("code").innerText;
+        navigator.clipboard.writeText(code);
+        button.textContent = "已复制";
+        setTimeout(function () { button.textContent = "复制"; }, 1200);
+      });
+    });
+
+    var methodSelect = document.getElementById("tryMethod");
+    var input = document.getElementById("tryValue");
+    var meta = document.getElementById("responseMeta");
+    var output = document.getElementById("responseBody");
+    var placeholders = {
+      popular: "16",
+      detail: "world-cup-2026",
+      create: "Searchkiller 的演示能否成功？",
+      refresh: "world-cup-2026"
+    };
+
+    methodSelect.addEventListener("change", function () {
+      input.value = placeholders[methodSelect.value];
+    });
+
+    document.getElementById("sendRequest").addEventListener("click", async function () {
+      var operation = methodSelect.value;
+      var value = input.value.trim();
+      var url = "/api/predictions";
+      var options = {};
+      if (operation === "popular") url += "/popular?limit=" + encodeURIComponent(value || "16");
+      if (operation === "detail") url += "/" + encodeURIComponent(value);
+      if (operation === "create") {
+        options = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: value }) };
+      }
+      if (operation === "refresh") {
+        url += "/" + encodeURIComponent(value) + "/refresh";
+        options = { method: "POST" };
+      }
+
+      meta.textContent = "正在发送 " + (options.method || "GET") + " " + url + "...";
+      output.textContent = "";
+      try {
+        var response = await fetch(url, options);
+        var body = await response.json();
+        meta.textContent = response.status + " " + response.statusText + " · " + (options.method || "GET") + " " + url;
+        output.textContent = JSON.stringify(body, null, 2);
+      } catch (error) {
+        meta.textContent = "请求失败";
+        output.textContent = String(error);
+      }
+    });
+  </script>
+</body>
+</html>

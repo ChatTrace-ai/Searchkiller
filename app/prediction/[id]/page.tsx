@@ -1,0 +1,75 @@
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { LoaderCircle } from 'lucide-react';
+import { PredictionDetailView } from '@/components/PredictionDetailView';
+import { PredictionHeader } from '@/components/PredictionHeader';
+import type { PredictionDetail, PredictionProgress } from '@/lib/prediction-types';
+
+export default function PredictionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const [prediction, setPrediction] = useState<PredictionDetail | null>(null);
+  const [progress, setProgress] = useState<PredictionProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/predictions/${id}`, { cache: 'no-store' });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error?.message || 'Prediction could not be loaded.');
+        if (cancelled) return;
+
+        if (body.status === 'processing') {
+          setProgress(body);
+          timeout = setTimeout(load, 2_000);
+          return;
+        }
+
+        setPrediction(body);
+        setProgress(null);
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : 'Prediction could not be loaded.');
+        }
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [id]);
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <PredictionHeader />
+      {error && (
+        <div className="mx-auto max-w-xl px-5 py-24 text-center">
+          <h1 className="text-2xl font-bold text-slate-900">Prediction unavailable</h1>
+          <p className="mt-3 text-slate-500">{error}</p>
+        </div>
+      )}
+      {!error && !prediction && (
+        <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-5 text-center">
+          <LoaderCircle className="h-10 w-10 animate-spin text-blue-600" />
+          <h1 className="mt-5 text-2xl font-bold text-slate-900">
+            {progress?.progress.message || 'Loading prediction'}
+          </h1>
+          <p className="mt-2 text-slate-500">
+            We are collecting evidence and estimating the outcome probabilities.
+          </p>
+        </div>
+      )}
+      {prediction && <PredictionDetailView prediction={prediction} />}
+    </div>
+  );
+}

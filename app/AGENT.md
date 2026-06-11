@@ -7,13 +7,15 @@ Next.js App Router layer (L2 in permission hierarchy).
 | Path | Type | Description |
 |------|------|-------------|
 | page.tsx | page | Landing / search entry |
-| layout.tsx | layout | Root HTML shell (dark mode, zh-CN) |
+| layout.tsx | layout | Root English HTML shell and metadata |
 | globals.css | styles | Global CSS + Tailwind directives |
 | research/page.tsx | page | Research orchestration dashboard |
+| prediction/[id]/page.tsx | page | Prediction polling and result dashboard |
 | api/plan/route.ts | API | Query planner (Gemini Flash) |
 | api/research/fetch/route.ts | API | Exa + ES context retrieval |
 | api/research/report/route.ts | API | Markdown report stream (Gemini Pro) |
 | api/research/mindmap/route.ts | API | Mind-map JSON stream (Gemini Pro) |
+| api/predictions/* | API | Prediction v1 mock endpoints |
 
 ## Boundaries
 - reads: lib/ (L3)

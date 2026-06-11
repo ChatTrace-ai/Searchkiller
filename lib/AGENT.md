@@ -12,6 +12,7 @@ Shared utilities and harness adapter (L3 in permission hierarchy).
 | schemas.ts | mindMapSchema (Zod 4), MindMapNode, Source, ResearchContext |
 | context-cache.ts | contextCache (Map\<string, ResearchContext\>) |
 | prediction-types.ts | PredictionStatus, PredictionSummary, PredictionDetail, API response types |
+| use-create-prediction.ts | Client hook for POST /api/predictions and detail navigation |
 | harness-adapter.ts | SearchkillerJudge, SearchkillerReportGenerator, planSubQueries, fetchSources, startLoop, loopNext, loopApprove, loopCancel |
 
 ## Boundaries

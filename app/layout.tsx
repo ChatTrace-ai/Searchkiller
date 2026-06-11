@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Searchkiller | AI Research Assistant',
-  description: 'Keyword-driven streaming research agent powered by Gemini & Exa',
+  title: 'Searchkiller | AI Prediction Explorer',
+  description: 'Explore evidence-based forecasts, probabilities, and source-backed analysis.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         {children}
       </body>

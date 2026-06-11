@@ -117,4 +117,19 @@ test.describe('/api/predictions', () => {
     expect(missing.status()).toBe(404);
     expect((await missing.json()).error.code).toBe('PREDICTION_NOT_FOUND');
   });
+
+  test('ranks named outcomes by probability and keeps Other outcomes last', async ({ request }) => {
+    const response = await request.get('/api/predictions/world-cup-2026');
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    const namedOutcomes = body.outcomes.filter(
+      (outcome: { label: string }) => outcome.label !== 'Other outcomes',
+    );
+    const probabilities = namedOutcomes.map(
+      (outcome: { probability: number }) => outcome.probability,
+    );
+    expect(probabilities).toEqual([...probabilities].sort((a, b) => b - a));
+    expect(body.outcomes.at(-1).label).toBe('Other outcomes');
+  });
 });
