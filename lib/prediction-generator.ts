@@ -57,7 +57,16 @@ Each query should be a full sentence optimized for semantic search, covering dif
       return;
     }
 
-    await updateProgress(client, id, 'estimating', 'Analyzing sources and estimating probabilities');
+    const liveSources = sources.slice(0, 6).map((s, i) => ({
+      id: `source-${i + 1}`,
+      title: s.title,
+      url: s.url,
+      description: s.text.slice(0, 200),
+    }));
+
+    await updateProgress(client, id, 'estimating', 'Analyzing sources and estimating probabilities', {
+      sources: liveSources,
+    });
 
     // Step 3: Analyze with Gemini
     const sourcesContext = sources
@@ -82,7 +91,15 @@ The "rationales" array must match the "outcome_labels" array in order.`,
       return;
     }
 
-    await updateProgress(client, id, 'writing_report', 'Generating detailed analysis report');
+    const draftOutcomes = analysis.outcome_labels.map((label, i) => ({
+      label,
+      probability: analysis.probabilities[i] ?? 50,
+      rationale: analysis.rationales[i] ?? 'Based on available evidence.',
+    }));
+
+    await updateProgress(client, id, 'writing_report', 'Generating detailed analysis report', {
+      draftOutcomes,
+    });
 
     // Step 4: Generate report (optimised for latency — shorter context, tighter word budget)
     const reportContext = sources
@@ -91,6 +108,9 @@ The "rationales" array must match the "outcome_labels" array in order.`,
       .join('\n\n');
 
     let report = '';
+    let lastReportPush = 0;
+    const REPORT_PUSH_INTERVAL_MS = 3_000;
+
     try {
       const result = streamText({
         model: proModel,
@@ -101,6 +121,13 @@ Be direct and data-driven — avoid filler text.`,
       });
       for await (const chunk of result.textStream) {
         report += chunk;
+        const now = Date.now();
+        if (now - lastReportPush > REPORT_PUSH_INTERVAL_MS && report.length > 50) {
+          lastReportPush = now;
+          await updateProgress(client, id, 'writing_report', 'Writing the source-backed forecast', {
+            reportPreview: report,
+          }).catch(() => {});
+        }
       }
     } catch {
       report = `## Analysis\n\nBased on ${sources.length} real-time sources, this forecast provides an evidence-based assessment.\n\n## Note\n\nDetailed report generation was unavailable. Please refer to the source links for more information.`;
@@ -177,7 +204,12 @@ async function updateProgress(
   id: string,
   stage: string,
   message: string,
-  extra?: { queries?: string[] },
+  extra?: {
+    queries?: string[];
+    sources?: Array<{ id: string; title: string; url: string; description: string }>;
+    draftOutcomes?: Array<{ label: string; probability: number; rationale: string }>;
+    reportPreview?: string;
+  },
 ): Promise<void> {
   try {
     const params: Record<string, unknown> = {
@@ -197,6 +229,18 @@ async function updateProgress(
     if (extra?.queries) {
       params.queries = extra.queries;
       scriptParts += `ctx._source.detail.progress.queries = params.queries;`;
+    }
+    if (extra?.sources) {
+      params.sources = extra.sources;
+      scriptParts += `ctx._source.detail.progress.sources = params.sources;`;
+    }
+    if (extra?.draftOutcomes) {
+      params.draftOutcomes = extra.draftOutcomes;
+      scriptParts += `ctx._source.detail.progress.draftOutcomes = params.draftOutcomes;`;
+    }
+    if (extra?.reportPreview) {
+      params.reportPreview = extra.reportPreview;
+      scriptParts += `ctx._source.detail.progress.reportPreview = params.reportPreview;`;
     }
 
     await client.update({

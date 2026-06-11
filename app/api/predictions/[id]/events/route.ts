@@ -33,6 +33,7 @@ export async function GET(
   let lastStage: PredictionStage = 'planning';
   let lastSourceCount = 0;
   let lastOutcomeCount = 0;
+  let lastReportLength = 0;
   let done = false;
 
   function makeEvent(
@@ -60,6 +61,13 @@ export async function GET(
       const initData = buildSnapshotFromPrediction(initial);
       enqueue(makeEvent('snapshot', initData));
       lastStage = initData.stage as PredictionStage;
+      const initSources = initData.sources as unknown[];
+      const initOutcomes = initData.draftOutcomes as unknown[];
+      const initReport = (initData.reportPreview as string) || '';
+      if (initSources?.length) lastSourceCount = initSources.length;
+      if (initOutcomes?.length) lastOutcomeCount = initOutcomes.length;
+      if (initReport.length) lastReportLength = initReport.length;
+      if ((initData.queries as unknown[])?.length > 0) queriesSent = true;
 
       const keepaliveTimer = setInterval(() => {
         enqueue(': keepalive\n\n');
@@ -92,6 +100,25 @@ export async function GET(
               if (!queriesSent && progAny.progress?.queries?.length > 0) {
                 queriesSent = true;
                 enqueue(makeEvent('queries', { queries: progAny.progress.queries }));
+              }
+
+              const liveSources = progAny.progress?.sources;
+              if (liveSources?.length > 0 && liveSources.length !== lastSourceCount) {
+                lastSourceCount = liveSources.length;
+                enqueue(makeEvent('sources', { sources: liveSources }));
+              }
+
+              const liveOutcomes = progAny.progress?.draftOutcomes;
+              if (liveOutcomes?.length > 0 && liveOutcomes.length !== lastOutcomeCount) {
+                lastOutcomeCount = liveOutcomes.length;
+                enqueue(makeEvent('outcomes', { outcomes: liveOutcomes }));
+              }
+
+              const reportPreview = progAny.progress?.reportPreview;
+              if (reportPreview && reportPreview.length > lastReportLength) {
+                const delta = reportPreview.slice(lastReportLength);
+                lastReportLength = reportPreview.length;
+                enqueue(makeEvent('report_delta', { delta }));
               }
 
               continue;
@@ -134,8 +161,9 @@ export async function GET(
                 }));
               }
 
-              if (detail.report) {
-                enqueue(makeEvent('report_delta', { delta: detail.report }));
+              if (detail.report && detail.report.length > lastReportLength) {
+                const delta = detail.report.slice(lastReportLength);
+                enqueue(makeEvent('report_delta', { delta }));
               }
 
               enqueue(makeEvent('completed', { id: detail.id }));
@@ -184,9 +212,9 @@ function buildSnapshotFromPrediction(
       stage: prog.progress?.stage || 'planning',
       message: prog.progress?.message || 'Planning focused research queries',
       queries: progAny.progress?.queries || [],
-      sources: [],
-      draftOutcomes: [],
-      reportPreview: '',
+      sources: progAny.progress?.sources || [],
+      draftOutcomes: progAny.progress?.draftOutcomes || [],
+      reportPreview: progAny.progress?.reportPreview || '',
     };
   }
 
