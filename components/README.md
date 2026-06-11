@@ -6,9 +6,7 @@ Client-side React components for the research dashboard interface.
 
 | Component | Description |
 |-----------|-------------|
-| `SearchInput.tsx` | Controlled keyword input form with submit handler |
 | `StreamingReport.tsx` | Live Markdown report panel with typing cursor animation |
-| `MindMap.tsx` | Interactive D3 tree visualization with custom node rendering |
 | `SourceCard.tsx` | Clickable reference source chips/cards |
 | `LoadingStates.tsx` | Animated loading indicators (pulsing dots + status text) |
 | `BrandMark.tsx` | Shared Searchkiller brand treatment |
