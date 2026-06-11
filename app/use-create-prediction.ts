@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { addRecentSearch } from './use-recent-searches';
 
 export function useCreatePrediction() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export function useCreatePrediction() {
     if (!response.ok) {
       throw new Error(body.error?.message || 'Prediction could not be created.');
     }
+    addRecentSearch(body.id, question);
     router.push(`/prediction/${body.id}`);
   }, [router]);
 }

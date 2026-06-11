@@ -3,9 +3,11 @@
 import { PaginatedPredictionGrid } from '@/components/PaginatedPredictionGrid';
 import { PredictionHeader } from '@/components/PredictionHeader';
 import { PredictionSearch } from '@/components/PredictionSearch';
+import { RecentSearches } from '@/components/RecentSearches';
 import { SiteFooter } from '@/components/SiteFooter';
 import { useCreatePrediction } from './use-create-prediction';
 import { usePredictionPagination } from './use-prediction-pagination';
+import { useRecentSearches } from './use-recent-searches';
 
 const popularSearches = [
   { label: 'World Cup winner', question: 'Who will win the 2026 FIFA World Cup?' },
@@ -17,6 +19,7 @@ const popularSearches = [
 export default function HomePage() {
   const createPrediction = useCreatePrediction();
   const pagination = usePredictionPagination();
+  const { searches } = useRecentSearches();
 
   return (
     <main className="min-h-screen bg-[#F8F6F2]">
@@ -67,6 +70,8 @@ export default function HomePage() {
           <span className="animate-bounce-slow block h-3 w-3 border-b-2 border-r-2 border-current" style={{ transform: 'rotate(45deg)', animationDelay: '0.5s' }} />
         </a>
       </div>
+
+      <RecentSearches searches={searches} />
 
       {/* Cards — warmer white to contrast with hero */}
       <section id="popular-predictions" className="scroll-mt-6 bg-[#F8F6F2]">
