@@ -11,7 +11,7 @@ Pure utility modules consumed by the application and agent layers, plus the harn
 | `elasticsearch.ts` | Elasticsearch Serverless hybrid search, BM25 + kNN (lazy-initialized) |
 | `schemas.ts` | Zod 4 schemas (`mindMapSchema`) and TypeScript interfaces (`Source`, `ResearchContext`, `MindMapNode`) |
 | `context-cache.ts` | In-memory session cache (`Map<string, ResearchContext>`) shared by research API routes |
-| `prediction-types.ts` | Prediction API v1 request and response contracts |
+| `prediction-types.ts` | Prediction API v1 and SSE stream event contracts |
 | `prediction-generator.ts` | Real prediction pipeline: Plan (Gemini Flash) → Exa search → Analyze (Flash) → Report (Gemini Pro) → Elasticsearch |
 | `prediction-store.ts` | Elasticsearch-backed prediction CRUD, featured seeding, cursor pagination; triggers `generateRealPrediction()` fire-and-forget |
 | `prediction-seeds.ts` | Static featured prediction seed catalog and `buildDetail()` helpers |

@@ -1,9 +1,9 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
-import { LoaderCircle } from 'lucide-react';
 import { PredictionDetailView } from '@/components/PredictionDetailView';
 import { PredictionHeader } from '@/components/PredictionHeader';
+import { PredictionProgressView } from '@/components/PredictionProgressView';
 import type { PredictionDetail, PredictionProgress } from '@/lib/prediction-types';
 import { useCreatePrediction } from '../../use-create-prediction';
 
@@ -35,6 +35,10 @@ export default function PredictionPage({
           return;
         }
 
+        if (body.status === 'failed') {
+          throw new Error(body.error?.message || 'Prediction generation failed.');
+        }
+
         setPrediction(body);
         setProgress(null);
       } catch (loadError) {
@@ -61,15 +65,7 @@ export default function PredictionPage({
         </div>
       )}
       {!error && !prediction && (
-        <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-5 text-center">
-          <LoaderCircle className="h-10 w-10 animate-spin text-blue-600" />
-          <h1 className="mt-5 text-2xl font-bold text-slate-900">
-            {progress?.progress.message || 'Loading prediction'}
-          </h1>
-          <p className="mt-2 text-slate-500">
-            We are collecting evidence and estimating the outcome probabilities.
-          </p>
-        </div>
+        <PredictionProgressView progress={progress} />
       )}
       {prediction && <PredictionDetailView prediction={prediction} />}
     </div>

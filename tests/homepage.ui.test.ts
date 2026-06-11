@@ -47,4 +47,32 @@ test.describe('Prediction homepage', () => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
+
+  test('shows backend generation stages while a prediction is processing', async ({ page }) => {
+    await page.route('**/api/predictions/pred_progress_demo', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'pred_progress_demo',
+          question: 'Will the multilingual launch ship this month?',
+          status: 'processing',
+          progress: {
+            stage: 'estimating',
+            message: 'Analyzing sources and estimating probabilities',
+          },
+          updatedAt: '2026-06-11T10:00:00Z',
+        }),
+      });
+    });
+
+    await page.goto('/prediction/pred_progress_demo');
+
+    await expect(page.getByRole('heading', {
+      name: 'Will the multilingual launch ship this month?',
+    })).toBeVisible();
+    await expect(page.locator('#prediction-progress-heading')).toHaveText('Estimating probabilities');
+    await expect(page.getByText('2 of 4')).toBeVisible();
+    await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '70');
+  });
 });

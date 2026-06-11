@@ -11,7 +11,7 @@ Shared utilities and harness adapter (L3 in permission hierarchy).
 | elasticsearch.ts | getClient() (lazy-init), hybridSearch() |
 | schemas.ts | mindMapSchema (Zod 4), MindMapNode, Source, ResearchContext |
 | context-cache.ts | contextCache (Map\<string, ResearchContext\>) |
-| prediction-types.ts | PredictionStatus, PredictionSummary, PredictionDetail, API response types |
+| prediction-types.ts | Prediction API response types and PredictionStreamEvent contract |
 | prediction-generator.ts | generateRealPrediction() — Plan (Flash) → Exa → Analyze (Flash) → Report (Pro) → ES |
 | prediction-store.ts | ES-backed CRUD, featured seeding, cursor pagination, fire-and-forget generation |
 | prediction-seeds.ts | Featured prediction seed catalog, buildDetail(), RESULT_TTL_MS |

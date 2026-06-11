@@ -13,6 +13,7 @@ Next.js Route Handlers for research, prediction, and evaluation workflows.
 | `GET /api/predictions/popular` | `{cursor?, limit?, category?}` | Cursor-paginated prediction summaries |
 | `POST /api/predictions` | `{question}` | Create or reuse prediction |
 | `GET /api/predictions/:id` | Path ID | Progress or completed prediction detail |
+| `GET /api/predictions/:id/events` | Path ID | Reserved SSE contract; not implemented in phase one |
 | `POST /api/predictions/:id/refresh` | Path ID | Restart prediction generation |
 
 | `POST /api/evaluate` | `{action, ...}` | HITL evaluation (initialize/config/evaluate/evaluate_trace/stats) |
@@ -23,3 +24,5 @@ Next.js Route Handlers for research, prediction, and evaluation workflows.
 
 Prediction v1 persists records in Elasticsearch and runs the real generation
 pipeline (Plan → Exa → Analyze → Report) asynchronously on create and refresh.
+The prediction README freezes the future SSE event contract so frontend and
+backend stream implementations can proceed independently.

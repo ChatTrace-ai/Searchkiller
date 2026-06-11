@@ -14,6 +14,7 @@ REST API surface for the research pipeline.
 | /api/predictions | POST | predictions/route.ts |
 | /api/predictions/popular | GET | predictions/popular/route.ts |
 | /api/predictions/:id | GET | predictions/[id]/route.ts |
+| /api/predictions/:id/events | GET | Contract only; route not implemented in phase one |
 | /api/predictions/:id/refresh | POST | predictions/[id]/refresh/route.ts |
 
 ## Boundaries
@@ -25,3 +26,4 @@ REST API surface for the research pipeline.
 plan(keyword) → fetch(keyword, subQueries) → parallel(report(sid), mindmap(sid))
 evaluate(initiate|finalize|stats) → agents/recycle → .agents/
 predictions(popular|create|detail|refresh) → lib/prediction-store
+predictions(events) → frozen contract in predictions/README.md; implementation pending
