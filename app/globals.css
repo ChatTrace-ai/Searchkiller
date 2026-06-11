@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --foreground: #1f2937;
-  --background: #ffffff;
+  --foreground: #2C2417;
+  --background: #F5F0E8;
 }
 
 body {
@@ -14,10 +14,25 @@ body {
 }
 
 .prediction-hero {
-  background:
-    radial-gradient(circle at 8% 80%, rgba(219, 234, 254, 0.85) 0, rgba(219, 234, 254, 0) 30%),
-    radial-gradient(circle at 92% 18%, rgba(224, 231, 255, 0.8) 0, rgba(224, 231, 255, 0) 30%),
-    linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
+  background-color: #F5F0E8;
+  background-image: url('/background.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  position: relative;
+}
+
+.prediction-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(245,240,232,0.28) 0%, rgba(245,240,232,0.55) 100%);
+  pointer-events: none;
+}
+
+.prediction-hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 @layer utilities {
@@ -27,11 +42,11 @@ body {
 }
 
 /* Markdown report styling */
-.prose-report h1 { @apply text-2xl font-bold mb-4 text-gray-900; }
-.prose-report h2 { @apply text-xl font-semibold mb-3 mt-6 text-gray-800; }
-.prose-report h3 { @apply text-lg font-medium mb-2 mt-4 text-gray-700; }
-.prose-report p { @apply mb-3 text-gray-700 leading-relaxed; }
-.prose-report ul { @apply list-disc pl-6 mb-3 text-gray-700; }
-.prose-report ol { @apply list-decimal pl-6 mb-3 text-gray-700; }
-.prose-report blockquote { @apply border-l-4 border-google-blue pl-4 italic text-gray-600; }
-.prose-report code { @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm text-gray-800; }
+.prose-report h1 { @apply text-2xl font-bold mb-4 text-[#2C2417]; }
+.prose-report h2 { @apply text-xl font-semibold mb-3 mt-6 text-[#2C2417]; }
+.prose-report h3 { @apply text-lg font-medium mb-2 mt-4 text-[#3A3020]; }
+.prose-report p { @apply mb-3 text-[#3A3020] leading-relaxed; }
+.prose-report ul { @apply list-disc pl-6 mb-3 text-[#3A3020]; }
+.prose-report ol { @apply list-decimal pl-6 mb-3 text-[#3A3020]; }
+.prose-report blockquote { @apply border-l-4 border-[#4A7C59] pl-4 italic text-[#7A6E5F]; }
+.prose-report code { @apply bg-[#EDE8DE] px-1.5 py-0.5 rounded text-sm text-[#2C2417]; }

@@ -18,7 +18,7 @@ export function StreamingReport({ content, isStreaming }: StreamingReportProps) 
       </div>
       {isStreaming && (
         <motion.span
-          className="inline-block w-2 h-5 bg-google-blue ml-1"
+          className="inline-block w-2 h-5 bg-laplace-sage ml-1"
           animate={{ opacity: [1, 0] }}
           transition={{ duration: 0.8, repeat: Infinity }}
         />

@@ -24,7 +24,7 @@ export function usePredictionPagination() {
     setError(null);
 
     try {
-      const params = new URLSearchParams({ limit: '16' });
+      const params = new URLSearchParams({ limit: '8' });
       if (cursor) params.set('cursor', cursor);
       const response = await fetch(`/api/predictions/popular?${params}`);
       const body = (await response.json()) as PredictionListResponse & {

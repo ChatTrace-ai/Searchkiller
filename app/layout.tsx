@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
+import { EB_Garamond } from 'next/font/google';
 import './globals.css';
+
+const ebGaramond = EB_Garamond({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "Laplace's Demon | AI Prediction Explorer",
@@ -8,8 +15,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-white text-gray-900 antialiased">
+    <html lang="en" className={ebGaramond.variable}>
+      <body className="min-h-screen bg-laplace-parchment text-[#2C2417] antialiased">
         {children}
       </body>
     </html>

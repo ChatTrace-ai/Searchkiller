@@ -23,9 +23,9 @@ export function MindMap({ data, isStreaming }: MindMapProps) {
 
   const renderCustomNode = useCallback(({ nodeDatum }: { nodeDatum: any }) => (
     <g>
-      <circle r={8} fill="#4285F4" />
+      <circle r={8} fill="#1B3A2D" />
       <text
-        fill="#f5f5f7"
+        fill="#2C2417"
         x={15}
         dy=".35em"
         fontSize={12}
@@ -35,7 +35,7 @@ export function MindMap({ data, isStreaming }: MindMapProps) {
       </text>
       {nodeDatum.attributes?.summary && (
         <text
-          fill="#86868b"
+          fill="#7A6E5F"
           x={15}
           dy="1.8em"
           fontSize={10}
@@ -58,13 +58,13 @@ export function MindMap({ data, isStreaming }: MindMapProps) {
 
   if (!data && isStreaming) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-laplace-parchment">
         <motion.div
-          className="text-gray-400"
+          className="text-laplace-muted"
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          正在构建思维导图...
+          Building mind map...
         </motion.div>
       </div>
     );
@@ -73,7 +73,7 @@ export function MindMap({ data, isStreaming }: MindMapProps) {
   return (
     <motion.div
       ref={treeContainer}
-      className="h-full w-full"
+      className="h-full w-full bg-laplace-parchment"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}

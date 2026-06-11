@@ -6,19 +6,19 @@ import { PredictionCard } from './PredictionCard';
 
 function CardSkeleton() {
   return (
-    <div className="min-h-72 animate-pulse rounded-lg border border-slate-200 bg-white p-5">
+    <div className="min-h-72 animate-pulse rounded-lg border border-laplace-border bg-laplace-card p-5">
       <div className="flex gap-3">
-        <div className="h-12 w-12 rounded-full bg-slate-100" />
+        <div className="h-12 w-12 rounded-full bg-laplace-border" />
         <div className="flex-1 space-y-2">
-          <div className="h-3 w-20 rounded bg-slate-100" />
-          <div className="h-4 w-full rounded bg-slate-100" />
-          <div className="h-4 w-3/4 rounded bg-slate-100" />
+          <div className="h-3 w-20 rounded bg-laplace-border" />
+          <div className="h-4 w-full rounded bg-laplace-border" />
+          <div className="h-4 w-3/4 rounded bg-laplace-border" />
         </div>
       </div>
       <div className="mt-7 space-y-4">
-        <div className="h-4 rounded bg-slate-100" />
-        <div className="h-4 rounded bg-slate-100" />
-        <div className="h-4 rounded bg-slate-100" />
+        <div className="h-4 rounded bg-laplace-border" />
+        <div className="h-4 rounded bg-laplace-border" />
+        <div className="h-4 rounded bg-laplace-border" />
       </div>
     </div>
   );
@@ -56,7 +56,7 @@ export function PaginatedPredictionGrid({
         {items.map((prediction) => (
           <PredictionCard key={prediction.id} prediction={prediction} />
         ))}
-        {loading && Array.from({ length: 16 }, (_, index) => (
+        {loading && Array.from({ length: 8 }, (_, index) => (
           <CardSkeleton key={`skeleton-${index}`} />
         ))}
       </div>
@@ -76,7 +76,7 @@ export function PaginatedPredictionGrid({
               onClick={() => goToPage(page - 1)}
               disabled={page === 1 || loading}
               aria-label="Previous page"
-              className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+              className="grid h-10 w-10 place-items-center rounded-md border border-laplace-border text-laplace-muted hover:border-laplace-sage hover:text-laplace-green disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -88,8 +88,8 @@ export function PaginatedPredictionGrid({
                 aria-current={pageNumber === page ? 'page' : undefined}
                 className={`h-10 min-w-10 rounded-md border px-3 text-sm font-semibold ${
                   pageNumber === page
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+                    ? 'border-laplace-green bg-laplace-green text-white'
+                    : 'border-laplace-border text-laplace-muted hover:border-laplace-sage hover:text-laplace-green'
                 }`}
               >
                 {pageNumber}
@@ -99,7 +99,7 @@ export function PaginatedPredictionGrid({
               onClick={goNext}
               disabled={!hasMore || loading}
               aria-label="Next page"
-              className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+              className="grid h-10 w-10 place-items-center rounded-md border border-laplace-border text-laplace-muted hover:border-laplace-sage hover:text-laplace-green disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

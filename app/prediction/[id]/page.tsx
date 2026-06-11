@@ -80,23 +80,23 @@ export default function PredictionPage({
   const lockViewport = initialLoading || Boolean(progress);
 
   return (
-    <div className={`${lockViewport ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-slate-50`}>
+    <div className={`${lockViewport ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-laplace-parchment`}>
       <PredictionHeader onSubmit={createPrediction} />
       {initialLoading && (
         <main
           aria-label="Loading prediction"
           className="grid h-[calc(100dvh-5rem)] place-items-center px-5"
         >
-          <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
-            <LoaderCircle className="h-5 w-5 animate-spin text-blue-600" />
+          <div className="flex items-center gap-3 text-sm font-medium text-laplace-muted">
+            <LoaderCircle className="h-5 w-5 animate-spin text-laplace-green" />
             Loading prediction
           </div>
         </main>
       )}
       {!initialLoading && error && (
         <div className="mx-auto max-w-xl px-5 py-24 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Prediction unavailable</h1>
-          <p className="mt-3 text-slate-500">{error}</p>
+          <h1 className="text-2xl font-bold text-[#2C2417]">Prediction unavailable</h1>
+          <p className="mt-3 text-laplace-muted">{error}</p>
         </div>
       )}
       {!initialLoading && !error && progress && (

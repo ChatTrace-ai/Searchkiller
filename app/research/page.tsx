@@ -38,7 +38,7 @@ function ResearchContent() {
       });
       const planBody = await planRes.json();
       if (!planRes.ok) {
-        throw new Error(planBody.error || '查询规划失败');
+        throw new Error(planBody.error || 'Planning failed');
       }
       const { subQueries } = planBody;
 
@@ -50,7 +50,7 @@ function ResearchContent() {
       });
       const fetchBody = await fetchRes.json();
       if (!fetchRes.ok) {
-        throw new Error(fetchBody.error || '文献抓取失败');
+        throw new Error(fetchBody.error || 'Source fetching failed');
       }
       const { sessionId: sid, sources: src } = fetchBody;
       setSources(src);
@@ -72,12 +72,12 @@ function ResearchContent() {
 
     if (!reportRes.ok) {
       const body = await reportRes.json().catch(() => ({}));
-      throw new Error(body.error || '报告生成失败');
+      throw new Error(body.error || 'Report generation failed');
     }
 
     const reportReader = reportRes.body?.getReader();
     if (!reportReader) {
-      throw new Error('报告流不可用');
+      throw new Error('Report stream unavailable');
     }
 
     const decoder = new TextDecoder();
@@ -90,7 +90,7 @@ function ResearchContent() {
     }
 
     if (!text.trim()) {
-      throw new Error('报告内容为空');
+      throw new Error('Report content is empty');
     }
   };
 
@@ -102,10 +102,10 @@ function ResearchContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-400 text-center">
-          <p className="text-xl mb-2">出错了</p>
-          <p className="text-sm text-gray-500">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-laplace-parchment">
+        <div className="text-center">
+          <p className="text-xl mb-2 text-[#2C2417]">Something went wrong</p>
+          <p className="text-sm text-laplace-muted">{error}</p>
         </div>
       </div>
     );
@@ -116,28 +116,28 @@ function ResearchContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
-        <a href="/" className="text-google-blue font-semibold">Laplace&apos;s Demon</a>
-        <span className="text-sm text-gray-600 truncate max-w-md">{keyword}</span>
+    <div className="h-screen flex flex-col bg-laplace-parchment">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-laplace-border bg-laplace-parchment">
+        <a href="/" className="text-laplace-green font-semibold">Laplace&apos;s Demon</a>
+        <span className="text-sm text-laplace-muted truncate max-w-md">{keyword}</span>
         <div className="flex items-center gap-2">
           {phase === 'streaming' && (
             <motion.div
-              className="w-2 h-2 bg-green-400 rounded-full"
+              className="w-2 h-2 bg-laplace-sage rounded-full"
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             />
           )}
-          <span className="text-xs text-gray-500">
-            {phase === 'streaming' ? '生成报告中...' : '完成'}
+          <span className="text-xs text-laplace-muted">
+            {phase === 'streaming' ? 'Generating report...' : 'Complete'}
           </span>
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden bg-white">
-        <div className="h-full overflow-y-auto bg-white">
+      <main className="flex-1 overflow-hidden bg-laplace-parchment">
+        <div className="h-full overflow-y-auto">
           {phase === 'streaming' && !reportContent && (
-            <p className="p-6 text-sm text-gray-500">正在生成报告，通常需要 1–2 分钟...</p>
+            <p className="p-6 text-sm text-laplace-muted">Generating report, usually takes 1–2 minutes...</p>
           )}
           <StreamingReport
             content={reportContent}

@@ -9,14 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        'laplace': {
+          green: '#1B3A2D',
+          'green-hover': '#2A5040',
+          sage: '#4A7C59',
+          parchment: '#F5F0E8',
+          border: '#DDD5C4',
+          muted: '#7A6E5F',
+          card: '#FDFAF5',
+          footer: '#EDE8DE',
+        },
         'google-blue': '#4285F4',
         'google-blue-dark': '#1a73e8',
-        'surface': {
-          DEFAULT: '#0f0f0f',
-          '50': '#1a1a1a',
-          '100': '#2d2d2d',
-          '200': '#3d3d3d',
-        },
+      },
+      fontFamily: {
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

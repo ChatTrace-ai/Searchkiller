@@ -78,15 +78,17 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
   return (
     <Link
       href={`/prediction/${prediction.id}`}
-      className="group flex min-h-72 flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-[0_14px_34px_rgba(37,99,235,0.1)]"
+      className="group flex min-h-72 flex-col rounded-lg border border-laplace-border bg-laplace-card p-5 shadow-[0_4px_16px_rgba(44,36,23,0.06)] transition hover:-translate-y-0.5 hover:border-laplace-sage hover:shadow-[0_10px_28px_rgba(27,58,45,0.1)]"
     >
       <div className="flex items-start gap-3">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-laplace-green/10 text-laplace-green">
           <Icon className="h-6 w-6" />
         </span>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase text-blue-600">{prediction.category}</p>
-          <h3 className="mt-1 line-clamp-2 font-semibold leading-5 text-gray-950">
+          <p className="text-xs font-semibold uppercase tracking-widest text-laplace-sage">
+            {prediction.category}
+          </p>
+          <h3 className="mt-1 line-clamp-2 font-semibold leading-5 text-[#2C2417]">
             {prediction.question}
           </h3>
         </div>
@@ -96,14 +98,14 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
         {prediction.topOutcomes.map((outcome, index) => (
           <div key={`${outcome.label}-${index}`}>
             <div className="flex items-center gap-2 text-sm">
-              <span className="w-5 text-slate-400">{index + 1}</span>
+              <span className="w-5 text-laplace-muted">{index + 1}</span>
               <span className="text-base">{outcome.icon || '•'}</span>
-              <span className="min-w-0 flex-1 truncate text-slate-700">{outcome.label}</span>
-              <span className="font-semibold text-blue-600">{outcome.probability}%</span>
+              <span className="min-w-0 flex-1 truncate text-[#3A3020]">{outcome.label}</span>
+              <span className="font-semibold text-laplace-green">{outcome.probability}%</span>
             </div>
-            <div className="ml-7 mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="ml-7 mt-1.5 h-1.5 overflow-hidden rounded-full bg-laplace-border">
               <span
-                className="block h-full rounded-full bg-blue-500"
+                className="block h-full rounded-full bg-laplace-green"
                 style={{ width: `${Math.max(2, outcome.probability)}%` }}
               />
             </div>
@@ -113,15 +115,15 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
 
       <div className="mt-auto flex items-center justify-between pt-5">
         {prediction.dataSource === 'seed' ? (
-          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
             Estimated
           </span>
         ) : (
-          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+          <span className="rounded bg-laplace-green/10 px-1.5 py-0.5 text-[10px] font-medium text-laplace-sage">
             AI-verified
           </span>
         )}
-        <p className="text-right text-xs text-slate-400">
+        <p className="text-right text-xs text-laplace-muted">
           Updated {relativeTime(prediction.updatedAt)}
         </p>
       </div>

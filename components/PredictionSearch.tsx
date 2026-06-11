@@ -33,11 +33,11 @@ export function PredictionSearch({
   return (
     <form
       onSubmit={submit}
-      className={`flex items-center border border-slate-200 bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100 ${
+      className={`flex items-center border border-laplace-border bg-laplace-card shadow-sm focus-within:border-laplace-sage focus-within:ring-4 focus-within:ring-laplace-sage/10 ${
         compact ? 'h-12 rounded-md' : 'h-16 rounded-lg'
       }`}
     >
-      <Search className={`ml-5 shrink-0 text-slate-500 ${compact ? 'h-5 w-5' : 'h-6 w-6'}`} />
+      <Search className={`ml-5 shrink-0 text-laplace-muted ${compact ? 'h-5 w-5' : 'h-6 w-6'}`} />
       <input
         value={value}
         onChange={(event) => setValue(event.target.value)}
@@ -47,7 +47,7 @@ export function PredictionSearch({
             : 'For example: Who will win the 2026 FIFA World Cup?'
         }
         aria-label={compact ? 'Global prediction search' : 'Prediction question'}
-        className={`min-w-0 flex-1 bg-transparent px-4 text-gray-900 outline-none placeholder:text-slate-400 ${
+        className={`min-w-0 flex-1 bg-transparent px-4 text-[#2C2417] outline-none placeholder:text-laplace-muted ${
           compact ? 'text-sm' : 'text-base sm:text-lg'
         }`}
       />
@@ -55,9 +55,9 @@ export function PredictionSearch({
         <button
           type="submit"
           disabled={value.trim().length < 5 || submitting}
-          className="mr-2 h-12 min-w-28 rounded-md bg-blue-600 px-5 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mr-2 h-12 min-w-28 rounded-md bg-laplace-green px-5 font-semibold text-white transition-colors hover:bg-laplace-green-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? 'Starting...' : 'Predict'}
+          {submitting ? 'Starting...' : 'Predict ✦'}
         </button>
       )}
     </form>
