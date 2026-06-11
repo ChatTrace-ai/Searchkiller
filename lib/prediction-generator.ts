@@ -84,10 +84,10 @@ The "rationales" array must match the "outcome_labels" array in order.`,
 
     await updateProgress(client, id, 'writing_report', 'Generating detailed analysis report');
 
-    // Step 4: Generate report
+    // Step 4: Generate report (optimised for latency — shorter context, tighter word budget)
     const reportContext = sources
-      .slice(0, 8)
-      .map((s, i) => `[Source #${i + 1}]\nTitle: ${s.title}\nURL: ${s.url}\nContent:\n${s.text.slice(0, 2000)}`)
+      .slice(0, 6)
+      .map((s, i) => `[#${i + 1}] ${s.title} (${s.url})\n${s.text.slice(0, 1200)}`)
       .join('\n\n');
 
     let report = '';
@@ -95,7 +95,8 @@ The "rationales" array must match the "outcome_labels" array in order.`,
       const result = streamText({
         model: proModel,
         system: `You are a world-class analyst. Write a concise Markdown forecast report based on real-time data.
-Requirements: ## headings, cite sources with [#n], 500-1500 words, end with probability assessment.`,
+Requirements: ## headings, cite sources with [#n], 300-500 words, end with a one-paragraph probability assessment.
+Be direct and data-driven — avoid filler text.`,
         prompt: `Research question: "${question}"\n\nReal-time data:\n${reportContext}`,
       });
       for await (const chunk of result.textStream) {
