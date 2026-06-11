@@ -6,6 +6,7 @@ import {
 } from './prediction-seeds';
 import { generateRealPrediction } from './prediction-generator';
 import type {
+  PredictionDataSource,
   PredictionDetail,
   PredictionListResponse,
   PredictionProgress,
@@ -45,6 +46,7 @@ function toSummary(doc: any): PredictionSummary {
     category: detail.category,
     icon: detail.icon,
     status: doc.status,
+    dataSource: (doc.data_source as PredictionDataSource) ?? 'seed',
     topOutcomes: (detail.outcomes || []).slice(0, 3).map((o: any) => ({
       label: o.label,
       probability: o.probability,
@@ -71,6 +73,7 @@ export async function ensurePredictionIndex(): Promise<void> {
           ready_at: { type: 'date' },
           expires_at: { type: 'date' },
           category: { type: 'keyword' },
+          data_source: { type: 'keyword' },
           detail: { type: 'object', enabled: true },
         },
       },
@@ -97,6 +100,7 @@ export async function ensureFeaturedSeeded(): Promise<void> {
         featured_sort: index,
         expires_at: FEATURED_EXPIRES,
         category: seed.category,
+        data_source: 'seed' as PredictionDataSource,
         detail,
       });
     });
@@ -113,6 +117,10 @@ export async function ensureFeaturedSeeded(): Promise<void> {
       }
     }
     console.info(`[prediction-store] seeded: created=${created}, duplicates=${duplicates}`);
+
+    if (created > 0 && process.env.AUTO_REFRESH_FEATURED !== 'false') {
+      scheduleBackgroundRefresh();
+    }
   })();
 
   return _seedPromise;
@@ -128,6 +136,7 @@ export async function listPopularPredictions(options: {
 
   const filters: any[] = [
     { term: { featured: true } },
+    { term: { status: 'completed' } },
     { range: { expires_at: { gt: 'now' } } },
   ];
 
@@ -201,6 +210,10 @@ export async function createPrediction(question: string): Promise<{
     category: 'General',
     icon: 'sparkles',
     status: 'processing',
+    progress: {
+      stage: 'planning',
+      message: 'Planning focused research queries',
+    },
     outcomes: [],
     sources: [],
     summary: [],
@@ -220,6 +233,7 @@ export async function createPrediction(question: string): Promise<{
       ready_at: null,
       expires_at: expiresAt,
       category: 'General',
+      data_source: 'real' as PredictionDataSource,
       detail: skeleton,
     },
     refresh: true,
@@ -249,12 +263,22 @@ export async function getPrediction(
         id: doc.detail.id,
         question: doc.detail.question,
         status: 'processing',
-        progress: doc.detail.progress ?? { stage: 'collecting_sources', message: 'We are collecting evidence and estimating the outcome probabilities.' },
+        progress: doc.detail.progress ?? { stage: 'planning', message: 'Planning focused research queries' },
         updatedAt: doc.detail.updatedAt,
       } as PredictionProgress;
     }
 
-    return { ...doc.detail, status: doc.status } as PredictionDetail;
+    const dataSource = doc.data_source === 'real' ? 'real' : 'seed';
+    const detail = { ...doc.detail, status: doc.status, dataSource } as PredictionDetail & { dataSource: string };
+
+    if (doc.status === 'failed') {
+      const reason = doc.detail?.confidence?.explanation
+        || doc.detail?.summary?.[0]
+        || 'Prediction generation failed.';
+      return { ...detail, error: { code: 'GENERATION_FAILED', message: reason } } as PredictionDetail & { error: { code: string; message: string }; dataSource: string };
+    }
+
+    return detail;
   } catch (error: any) {
     if (error?.statusCode === 404) return null;
     throw error;
@@ -294,7 +318,13 @@ export async function refreshPrediction(id: string): Promise<
       refresh: true,
     });
 
-    generateRealPrediction(id, question).catch((err) => {
+    generateRealPrediction(id, question).then(() => {
+      client.update({
+        index: INDEX_NAME,
+        id,
+        body: { doc: { data_source: 'real' } },
+      }).catch(() => {});
+    }).catch((err) => {
       console.error(`[prediction-store] refresh generation failed for ${id}:`, err.message);
     });
 
@@ -303,4 +333,112 @@ export async function refreshPrediction(id: string): Promise<
     if (error?.statusCode === 404) return { status: 'not_found' };
     throw error;
   }
+}
+
+/**
+ * Returns featured predictions that still use seed data.
+ */
+export async function listStaleFeatured(limit = 33): Promise<Array<{ id: string; question: string }>> {
+  await ensureFeaturedSeeded();
+  const client = getClient();
+
+  const response = await client.search({
+    index: INDEX_NAME,
+    body: {
+      size: limit,
+      query: {
+        bool: {
+          filter: [{ term: { featured: true } }],
+          must_not: [{ term: { data_source: 'real' } }],
+        },
+      },
+      sort: [{ featured_sort: 'asc' }],
+      _source: ['detail.id', 'detail.question'],
+    },
+  });
+
+  return (response.hits.hits || []).map((h: any) => ({
+    id: h._id as string,
+    question: h._source?.detail?.question as string,
+  }));
+}
+
+const REFRESH_DELAY_MS = 6_000;
+
+/**
+ * Batch refresh featured predictions that still have seed data.
+ * Returns the number of predictions queued for refresh.
+ */
+export async function refreshFeaturedBatch(maxConcurrent = 2): Promise<{
+  queued: number;
+  skipped: number;
+  total: number;
+}> {
+  const stale = await listStaleFeatured();
+  if (stale.length === 0) return { queued: 0, skipped: 0, total: 0 };
+
+  let queued = 0;
+  let skipped = 0;
+
+  const refreshOne = async (item: { id: string; question: string }, idx: number) => {
+    if (idx > 0) {
+      await new Promise((r) => setTimeout(r, REFRESH_DELAY_MS));
+    }
+    const result = await refreshPrediction(item.id);
+    if (result.status === 'started') {
+      queued++;
+      console.log(`[featured-refresh] ${item.id}: started (${queued}/${stale.length})`);
+    } else {
+      skipped++;
+      console.log(`[featured-refresh] ${item.id}: ${result.status}`);
+    }
+  };
+
+  const chunks: Array<{ id: string; question: string }>[] = [];
+  for (let i = 0; i < stale.length; i += maxConcurrent) {
+    chunks.push(stale.slice(i, i + maxConcurrent));
+  }
+
+  for (const chunk of chunks) {
+    await Promise.allSettled(chunk.map((item, idx) => refreshOne(item, idx)));
+  }
+
+  return { queued, skipped, total: stale.length };
+}
+
+let _bgRefreshScheduled = false;
+
+/**
+ * Schedule background refresh of first-page featured predictions after seeding.
+ * Safe to call multiple times — only runs once.
+ */
+export function scheduleBackgroundRefresh(delayMs = 10_000, maxItems = 16): void {
+  if (_bgRefreshScheduled) return;
+  _bgRefreshScheduled = true;
+
+  setTimeout(async () => {
+    try {
+      const stale = await listStaleFeatured(maxItems);
+      if (stale.length === 0) {
+        console.log('[featured-refresh] All featured predictions already have real data');
+        return;
+      }
+      console.log(`[featured-refresh] Starting background refresh of ${stale.length} seed predictions`);
+      for (let i = 0; i < stale.length; i++) {
+        const item = stale[i];
+        try {
+          const result = await refreshPrediction(item.id);
+          console.log(`[featured-refresh] [${i + 1}/${stale.length}] ${item.id}: ${result.status}`);
+          if (result.status === 'started' && i < stale.length - 1) {
+            await new Promise((r) => setTimeout(r, REFRESH_DELAY_MS));
+          }
+        } catch (err: any) {
+          console.error(`[featured-refresh] [${i + 1}/${stale.length}] ${item.id}: error - ${err.message}`);
+        }
+      }
+      console.log('[featured-refresh] Background refresh round complete');
+    } catch (err: any) {
+      console.error('[featured-refresh] Background refresh failed:', err.message);
+    }
+  }, delayMs);
 }

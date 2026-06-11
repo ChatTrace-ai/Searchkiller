@@ -51,8 +51,17 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
                 <h1 className="mt-1 text-2xl font-bold text-gray-950 sm:text-3xl">
                   {prediction.question}
                 </h1>
-                <p className="mt-2 text-sm text-slate-500">
-                  Forecast based on multiple information sources · Updated {formatDate(prediction.updatedAt)}
+                <p className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                  {(prediction as any).dataSource === 'seed' ? (
+                    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+                      Estimated
+                    </span>
+                  ) : (prediction as any).dataSource === 'real' ? (
+                    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                      AI-verified
+                    </span>
+                  ) : null}
+                  <span>Forecast based on multiple information sources · Updated {formatDate(prediction.updatedAt)}</span>
                 </p>
               </div>
             </div>

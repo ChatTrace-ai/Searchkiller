@@ -6,12 +6,15 @@ export type PredictionStage =
   | 'estimating'
   | 'writing_report';
 
+export type PredictionDataSource = 'seed' | 'real';
+
 export interface PredictionSummary {
   id: string;
   question: string;
   category: string;
   icon?: string;
   status: PredictionStatus;
+  dataSource?: PredictionDataSource;
   topOutcomes: Array<{
     label: string;
     probability: number;

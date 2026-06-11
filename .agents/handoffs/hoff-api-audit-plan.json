@@ -1,0 +1,230 @@
+{
+  "id": "hoff-api-audit-plan",
+  "version": 1,
+  "phase": "created",
+  "trace_id": "trace-api-audit-001",
+  "createdAt": "2026-06-12T00:00:00.000Z",
+  "updatedAt": "2026-06-12T00:00:00.000Z",
+  "input": {
+    "keyword": "Frontend-backend API alignment audit after git pull (Laplace's Demon UI + local SSE/dataSource/fallback changes)",
+    "scope": [
+      "Type contract alignment",
+      "Missing API fields",
+      "SSE event format",
+      "Error handling",
+      "Failed prediction handling",
+      "Stream mode switching",
+      "Featured seed→real lifecycle",
+      "New frontend features needing backend support"
+    ]
+  },
+  "output": {
+    "audit_summary": "Core REST contracts for completed predictions and popular list are aligned. The largest gaps are in the real-mode SSE stream (poll-based endpoint emits only stage transitions until completion, missing queries/incremental report), failed-prediction error shape mismatch on GET, and featured-refresh lifecycle UX (stale cards during processing). Mock stream mode masks SSE gaps in default dev.",
+    "gaps": [
+      {
+        "id": "gap-failed-status-error-shape",
+        "severity": "P0",
+        "frontend_file": "app/prediction/[id]/page.tsx",
+        "backend_file": "app/api/predictions/[id]/route.ts",
+        "description": "When status is 'failed', the page reads body.error?.message, but GET /api/predictions/[id] returns 200 with a PredictionDetail-shaped body (confidence.explanation holds the reason) and no top-level error object. Users see the generic fallback 'Prediction generation failed.' instead of the specific reason from markFailed().",
+        "fix": "Either (A) extend getPrediction()/GET route to return { status: 'failed', error: { code: 'GENERATION_FAILED', message: detail.confidence.explanation } } for failed docs, or (B) update page.tsx to use body.confidence?.explanation || body.summary?.[0] when body.status === 'failed'. Prefer (A) for ApiErrorBody consistency."
+      },
+      {
+        "id": "gap-sse-failed-generic-message",
+        "severity": "P0",
+        "frontend_file": "app/prediction/use-prediction-stream.ts",
+        "backend_file": "app/api/predictions/[id]/events/route.ts",
+        "description": "SSE failed events always emit message: 'Prediction generation failed' (hardcoded) instead of the reason stored in ES (confidence.explanation from markFailed). The stream failure path loses actionable error text even though the frontend passes event.data.message to onFailed.",
+        "fix": "When detail.status === 'failed', read detail.confidence.explanation (or summary[0]) and emit failed with that message. Mirror the same for stream timeout vs GENERATION_FAILED distinction."
+      },
+      {
+        "id": "gap-sse-no-queries-events",
+        "severity": "P1",
+        "frontend_file": "components/PredictionProgressView.tsx",
+        "backend_file": "app/api/predictions/[id]/events/route.ts",
+        "description": "Frontend live panel expects queries events to populate streamState.queries. Generator writes plan.subQueries to detail.progress.queries via updateProgress(), but the SSE route never reads or emits queries events during processing.",
+        "fix": "Track lastQueryCount/hash in SSE poll loop; when detail.progress.queries changes, emit queries event. Include queries in initial snapshot built from current ES state (not hardcoded empty)."
+      },
+      {
+        "id": "gap-sse-no-incremental-stream",
+        "severity": "P1",
+        "frontend_file": "components/PredictionProgressView.tsx",
+        "backend_file": "app/api/predictions/[id]/events/route.ts",
+        "description": "Mock stream emits progressive sources, outcomes, and report_delta events during processing. Real SSE only emits stage events while processing, then dumps sources/outcomes/report_delta once at completion. Live activity panel stays empty for most of a 1–2 minute real run.",
+        "fix": "Short term: emit queries + stage from ES progress (above). Medium term: have prediction-generator persist partial sources/outcomes/report chunks to detail.progress and have SSE diff-emit them. Long term: pipe generator callbacks through Redis/pub-sub for true streaming."
+      },
+      {
+        "id": "gap-sse-stale-initial-snapshot",
+        "severity": "P1",
+        "frontend_file": "app/prediction/prediction-stream-state.ts",
+        "backend_file": "app/api/predictions/[id]/events/route.ts",
+        "description": "SSE always opens with a hardcoded snapshot (stage: planning, empty arrays) even if ES already has progress at collecting_sources/estimating with queries populated. Causes brief UI regression until next poll detects stage change.",
+        "fix": "Build initial snapshot from getPrediction(id) at stream start: map detail.progress.stage/message, detail.progress.queries, and any partial progress fields into PredictionStreamState."
+      },
+      {
+        "id": "gap-sse-missing-planning-stage",
+        "severity": "P1",
+        "frontend_file": "components/PredictionProgressView.tsx",
+        "backend_file": "lib/prediction-generator.ts",
+        "description": "Frontend stage ladder includes 'planning'. Generator's first updateProgress call is collecting_sources (after Gemini plan completes). Users never see the planning step in real mode unless SSE snapshot hardcodes it.",
+        "fix": "Add updateProgress(id, 'planning', 'Planning focused research queries') at pipeline start before safeGenerateObject plan step."
+      },
+      {
+        "id": "gap-sse-no-node-runtime",
+        "severity": "P1",
+        "frontend_file": "app/prediction/prediction-stream-client.ts",
+        "backend_file": "app/api/predictions/[id]/events/route.ts",
+        "description": "SSE route lacks export const runtime = 'nodejs' while other prediction routes declare it. On Cloud Run/Edge this may prevent ES access or cause inconsistent deployment behavior (noted in cbcc462 deployment fixes).",
+        "fix": "Add export const runtime = 'nodejs' and export const dynamic = 'force-dynamic' (already present) to events/route.ts."
+      },
+      {
+        "id": "gap-popular-no-status-filter",
+        "severity": "P1",
+        "frontend_file": "components/PredictionCard.tsx",
+        "backend_file": "lib/prediction-store.ts",
+        "description": "listPopularPredictions filters featured + not-expired but not status=completed. During featured refresh (status→processing), cards may appear with stale outcomes from the previous detail blob while showing outdated Estimated/AI-verified badges.",
+        "fix": "Filter popular list to status: completed OR exclude processing/failed. Optionally expose status on PredictionSummary so cards can show a 'Refreshing…' state."
+      },
+      {
+        "id": "gap-processing-skeleton-no-progress",
+        "severity": "P2",
+        "frontend_file": "app/prediction/[id]/page.tsx",
+        "backend_file": "lib/prediction-store.ts",
+        "description": "createPrediction skeleton lacks detail.progress; getPrediction defaults to collecting_sources before generator's first updateProgress. Polling-only path skips 'planning' stage until SSE/mock provides it.",
+        "fix": "Initialize skeleton with progress: { stage: 'planning', message: 'Starting prediction pipeline' } in createPrediction and refreshPrediction."
+      },
+      {
+        "id": "gap-featured-refresh-stale-card",
+        "severity": "P2",
+        "frontend_file": "components/PredictionCard.tsx",
+        "backend_file": "lib/prediction-store.ts",
+        "description": "refreshPrediction spreads existing detail during processing and only sets data_source='real' after generation completes. Homepage cards keep seed label and old probabilities for 1–2 minutes during background refresh.",
+        "fix": "On refresh start: set data_source to 'seed' explicitly or add status='processing' to summary; clear topOutcomes or show placeholder. Update data_source to 'real' atomically with completed detail write (already done in generator; remove redundant post-refresh update in refreshPrediction)."
+      },
+      {
+        "id": "gap-no-refresh-ui",
+        "severity": "P2",
+        "frontend_file": "components/PredictionDetailView.tsx",
+        "backend_file": "app/api/predictions/[id]/refresh/route.ts",
+        "description": "Backend POST /api/predictions/[id]/refresh is implemented and tested, but no frontend component exposes a refresh/re-run button on the detail page.",
+        "fix": "Add refresh control to PredictionDetailView or PredictionHeader that POSTs refresh, navigates to processing state, and reconnects stream."
+      },
+      {
+        "id": "gap-category-filter-no-ui",
+        "severity": "P2",
+        "frontend_file": "app/use-prediction-pagination.ts",
+        "backend_file": "app/api/predictions/popular/route.ts",
+        "description": "Backend supports ?category= filter (tested in predictions.api.test.ts) but homepage pagination never passes a category param. No category chips/tabs in UI.",
+        "fix": "Add category filter UI on homepage; pass category to usePredictionPagination load() params when selected."
+      },
+      {
+        "id": "gap-no-sse-integration-tests",
+        "severity": "P2",
+        "frontend_file": "app/prediction/prediction-stream-client.ts",
+        "backend_file": "app/api/predictions/[id]/events/route.ts",
+        "description": "Only prediction-stream.state.test.ts covers the reducer. No API or Playwright test validates real SSE event sequencing, named EventSource listeners, or failed/completed terminal events from the backend route.",
+        "fix": "Add predictions.events.api.test.ts using fetch with Accept: text/event-stream or Playwright route intercept; assert event order and payload shape for a mocked ES doc lifecycle."
+      },
+      {
+        "id": "gap-detail-no-datasource-badge",
+        "severity": "P3",
+        "frontend_file": "components/PredictionDetailView.tsx",
+        "backend_file": "app/api/predictions/[id]/route.ts",
+        "description": "PredictionCard shows Estimated vs AI-verified via dataSource, but PredictionDetail has no equivalent badge. dataSource lives on ES doc root, not in PredictionDetail type/GET response.",
+        "fix": "Add dataSource?: PredictionDataSource to PredictionDetail (or include in GET wrapper) and render badge in detail header for parity with cards."
+      },
+      {
+        "id": "gap-icon-fallback-seeds",
+        "severity": "P3",
+        "frontend_file": "components/PredictionCard.tsx",
+        "backend_file": "lib/prediction-seeds.ts",
+        "description": "Several seed icons (smartphone, chart-candlestick, fuel, car-front, etc.) are not in PredictionCard icons map; cards fall back to Sparkles instead of semantic icons.",
+        "fix": "Extend icons map in PredictionCard.tsx or normalize seed icons to the existing Lucide key set in prediction-seeds.ts."
+      },
+      {
+        "id": "gap-stream-mode-build-time",
+        "severity": "P3",
+        "frontend_file": "app/prediction/prediction-stream-client.ts",
+        "backend_file": ".env.example",
+        "description": "NEXT_PUBLIC_PREDICTION_STREAM_MODE is read at build time (Next.js public env). Changing .env without rebuild leaves mock mode active despite .env.example defaulting to real.",
+        "fix": "Document in deployment guide that rebuild is required after env change. Optionally add runtime config endpoint or server component prop to avoid build-time coupling."
+      }
+    ],
+    "aligned": [
+      {
+        "area": "Completed PredictionDetail contract",
+        "note": "Seeds (buildDetail) and generator output match PredictionDetailView fields: confidence, outcomes (id/rank/label/probability/change/rationale/sourceIds), sources (quality as ConfidenceLevel), summary, report, timestamps."
+      },
+      {
+        "area": "Processing PredictionProgress contract",
+        "note": "getPrediction returns { id, question, status: 'processing', progress: { stage, message }, updatedAt } matching page and ProgressView expectations."
+      },
+      {
+        "area": "Popular list pagination",
+        "note": "GET /api/predictions/popular returns { items, nextCursor, hasMore } with limit=16 default; cursor encoding matches usePredictionPagination."
+      },
+      {
+        "area": "Create/reuse mutation",
+        "note": "POST /api/predictions returns PredictionMutationResponse shape; useCreatePrediction handles error.body.error.message."
+      },
+      {
+        "area": "SSE wire protocol",
+        "note": "Backend emits event: <type>\\ndata: <JSON PredictionStreamEvent>\\n\\n matching createRealClient EventSource listeners for all 8 event types."
+      },
+      {
+        "area": "4xx error envelope",
+        "note": "errorResponse() returns ApiErrorBody consistently on popular, create, refresh, and not-found paths."
+      },
+      {
+        "area": "Featured refresh API",
+        "note": "GET/POST /api/predictions/refresh-featured implemented; listStaleFeatured + batch refresh wired; AUTO_REFRESH_FEATURED background schedule on seed."
+      },
+      {
+        "area": "Mock stream mode",
+        "note": "Default mock mode provides full progressive UX for dev/tests; real mode correctly targets /api/predictions/${id}/events when NEXT_PUBLIC_PREDICTION_STREAM_MODE=real."
+      }
+    ],
+    "execution_order": [
+      {
+        "order": 1,
+        "gap_ids": ["gap-failed-status-error-shape", "gap-sse-failed-generic-message"],
+        "rationale": "P0 — fix failed prediction UX on both polling and SSE paths before any stream enhancements"
+      },
+      {
+        "order": 2,
+        "gap_ids": ["gap-sse-no-node-runtime", "gap-sse-stale-initial-snapshot", "gap-sse-no-queries-events", "gap-sse-missing-planning-stage"],
+        "rationale": "P1 quick wins — deployment safety + meaningful real-mode stream content with minimal generator changes"
+      },
+      {
+        "order": 3,
+        "gap_ids": ["gap-sse-no-incremental-stream", "gap-processing-skeleton-no-progress"],
+        "rationale": "P1/P2 — deepen live activity fidelity during long-running real predictions"
+      },
+      {
+        "order": 4,
+        "gap_ids": ["gap-popular-no-status-filter", "gap-featured-refresh-stale-card"],
+        "rationale": "P1/P2 — homepage integrity during seed→real background refresh"
+      },
+      {
+        "order": 5,
+        "gap_ids": ["gap-no-refresh-ui", "gap-category-filter-no-ui"],
+        "rationale": "P2 — expose existing backend capabilities in new UI surfaces"
+      },
+      {
+        "order": 6,
+        "gap_ids": ["gap-no-sse-integration-tests"],
+        "rationale": "P2 — lock in stream contract before further generator refactors"
+      },
+      {
+        "order": 7,
+        "gap_ids": ["gap-detail-no-datasource-badge", "gap-icon-fallback-seeds", "gap-stream-mode-build-time"],
+        "rationale": "P3 — polish and documentation"
+      }
+    ]
+  },
+  "metrics": {
+    "planDurationMs": 0,
+    "modelUsed": "planner-agent",
+    "gapsBySeverity": { "P0": 2, "P1": 6, "P2": 6, "P3": 2 }
+  }
+}

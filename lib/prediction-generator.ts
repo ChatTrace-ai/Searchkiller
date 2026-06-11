@@ -27,6 +27,8 @@ export async function generateRealPrediction(id: string, question: string): Prom
   const client = getClient();
 
   try {
+    await updateProgress(client, id, 'planning', 'Breaking the question into focused research queries');
+
     // Step 1: Plan sub-queries
     const planResult = await safeGenerateObject({
       model: flashModel,
@@ -39,7 +41,9 @@ Each query should be a full sentence optimized for semantic search, covering dif
     });
     const plan = planResult.object as { subQueries: string[] };
 
-    await updateProgress(client, id, 'collecting_sources', 'Searching the web for evidence');
+    await updateProgress(client, id, 'collecting_sources', 'Searching the web for evidence', {
+      queries: plan.subQueries,
+    });
 
     // Step 2: Fetch from Exa
     const providers = getActiveProviders();
@@ -49,7 +53,7 @@ Each query should be a full sentence optimized for semantic search, covering dif
     const sources = urlDedup(providerResults.flat());
 
     if (sources.length === 0) {
-      await finishWithFallback(client, id, question);
+      await markFailed(client, id, question, 'No real-time sources found. Try a more specific question.');
       return;
     }
 
@@ -74,7 +78,7 @@ The "rationales" array must match the "outcome_labels" array in order.`,
       });
       analysis = analysisResult.object as z.infer<typeof AnalysisSchema>;
     } catch {
-      await finishWithFallback(client, id, question, sources);
+      await markFailed(client, id, question, 'Analysis generation failed. Please try again.');
       return;
     }
 
@@ -153,6 +157,7 @@ Requirements: ## headings, cite sources with [#n], 500-1500 words, end with prob
           status: 'completed',
           ready_at: null,
           expires_at: new Date(Date.now() + RESULT_TTL_MS).toISOString(),
+          data_source: 'real',
           detail,
         },
       },
@@ -162,7 +167,7 @@ Requirements: ## headings, cite sources with [#n], 500-1500 words, end with prob
     console.info(`[prediction-generator] completed: ${id}`);
   } catch (error: any) {
     console.error(`[prediction-generator] failed for ${id}:`, error.message);
-    await finishWithFallback(client, id, question).catch(() => {});
+    await markFailed(client, id, question, 'Prediction pipeline encountered an unexpected error.').catch(() => {});
   }
 }
 
@@ -171,81 +176,78 @@ async function updateProgress(
   id: string,
   stage: string,
   message: string,
+  extra?: { queries?: string[] },
 ): Promise<void> {
   try {
+    const params: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+      stage,
+      message,
+    };
+
+    let scriptParts = `
+      ctx._source.detail.status = 'processing';
+      ctx._source.detail.updatedAt = params.updatedAt;
+      if (ctx._source.detail.progress == null) { ctx._source.detail.progress = new HashMap(); }
+      ctx._source.detail.progress.stage = params.stage;
+      ctx._source.detail.progress.message = params.message;
+    `;
+
+    if (extra?.queries) {
+      params.queries = extra.queries;
+      scriptParts += `ctx._source.detail.progress.queries = params.queries;`;
+    }
+
     await client.update({
       index: INDEX_NAME,
       id,
       body: {
         script: {
-          source: `
-            ctx._source.detail.status = 'processing';
-            ctx._source.detail.updatedAt = params.updatedAt;
-            if (ctx._source.detail.progress == null) { ctx._source.detail.progress = new HashMap(); }
-            ctx._source.detail.progress.stage = params.stage;
-            ctx._source.detail.progress.message = params.message;
-          `,
+          source: scriptParts,
           lang: 'painless',
-          params: {
-            updatedAt: new Date().toISOString(),
-            stage,
-            message,
-          },
+          params,
         },
       },
     });
   } catch {}
 }
 
-async function finishWithFallback(
+async function markFailed(
   client: any,
   id: string,
   question: string,
-  sources?: Array<{ title: string; url: string; text: string }>,
+  reason: string,
 ): Promise<void> {
   const now = new Date().toISOString();
-  const fallbackSources = sources
-    ? sources.slice(0, 3).map((s, i) => ({
-        id: `source-${i + 1}`,
-        title: s.title,
-        description: s.text.slice(0, 200),
-        url: s.url,
-        quality: 'medium',
-        publishedAt: now,
-      }))
-    : [];
-
-  const detail = {
-    id,
-    question,
-    category: 'General',
-    icon: 'sparkles',
-    status: 'completed',
-    confidence: { level: 'low', score: 30, explanation: 'Limited data available for this prediction.' },
-    outcomes: [
-      { id: 'yes', rank: 1, label: 'Yes', probability: 50, change: 0, rationale: 'Insufficient data for a strong estimate.', sourceIds: [] },
-      { id: 'no', rank: 2, label: 'No', probability: 50, change: 0, rationale: 'Insufficient data for a strong estimate.', sourceIds: [] },
-    ],
-    sources: fallbackSources,
-    summary: ['Insufficient real-time data was found to provide a confident forecast.', 'This prediction uses default probabilities — try a more specific question.'],
-    report: `## Analysis\n\nInsufficient real-time data was available for "${question}". The probabilities shown are defaults.\n\n## Recommendation\n\nTry rephrasing your question or searching for a more specific topic.`,
-    createdAt: now,
-    updatedAt: now,
-  };
 
   await client.update({
     index: INDEX_NAME,
     id,
     body: {
       doc: {
-        status: 'completed',
+        status: 'failed',
         ready_at: null,
         expires_at: new Date(Date.now() + RESULT_TTL_MS).toISOString(),
-        detail,
+        detail: {
+          id,
+          question,
+          category: 'General',
+          icon: 'sparkles',
+          status: 'failed',
+          confidence: { level: 'low', score: 0, explanation: reason },
+          outcomes: [],
+          sources: [],
+          summary: [reason],
+          report: '',
+          createdAt: now,
+          updatedAt: now,
+        },
       },
     },
     refresh: true,
   });
+
+  console.warn(`[prediction-generator] marked failed: ${id} — ${reason}`);
 }
 
 function urlDedup(sources: Array<{ title: string; url: string; text: string }>): Array<{ title: string; url: string; text: string }> {

@@ -2,29 +2,66 @@ import Link from 'next/link';
 import {
   Atom,
   BadgeDollarSign,
+  BadgeEuro,
+  BatteryCharging,
   Bitcoin,
   BrainCircuit,
+  CarFront,
+  CarTaxiFront,
+  ChartCandlestick,
   ChartNoAxesCombined,
   CircleDot,
+  Clapperboard,
   Cloud,
+  FlagTriangleRight,
+  Fuel,
+  Gamepad2,
+  Gem,
+  JapaneseYen,
   Landmark,
+  Medal,
+  Music2,
   Rocket,
+  Smartphone,
   Sparkles,
+  Sun,
+  ThermometerSun,
+  TrendingUp,
   Trophy,
+  Tv,
 } from 'lucide-react';
 import type { PredictionSummary } from '@/lib/prediction-types';
 
-const icons = {
+const icons: Record<string, typeof Sparkles> = {
   trophy: Trophy,
   bitcoin: Bitcoin,
   'circle-dot': CircleDot,
   landmark: Landmark,
   'badge-dollar-sign': BadgeDollarSign,
+  'badge-euro': BadgeEuro,
   'brain-circuit': BrainCircuit,
   'chart-no-axes-combined': ChartNoAxesCombined,
+  'chart-candlestick': ChartCandlestick,
+  'car-front': CarFront,
+  'car-taxi-front': CarTaxiFront,
+  'battery-charging': BatteryCharging,
+  'flag-triangle-right': FlagTriangleRight,
+  'thermometer-sun': ThermometerSun,
+  'japanese-yen': JapaneseYen,
+  'gamepad-2': Gamepad2,
+  'music-2': Music2,
+  'trending-up': TrendingUp,
   rocket: Rocket,
   atom: Atom,
   cloud: Cloud,
+  clapperboard: Clapperboard,
+  fuel: Fuel,
+  gem: Gem,
+  medal: Medal,
+  smartphone: Smartphone,
+  sun: Sun,
+  tv: Tv,
+  sparkles: Sparkles,
 };
 
 function relativeTime(value: string) {
@@ -74,9 +111,20 @@ export function PredictionCard({ prediction }: { prediction: PredictionSummary }
         ))}
       </div>
 
-      <p className="mt-auto pt-5 text-right text-xs text-slate-400">
-        Updated {relativeTime(prediction.updatedAt)}
-      </p>
+      <div className="mt-auto flex items-center justify-between pt-5">
+        {prediction.dataSource === 'seed' ? (
+          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+            Estimated
+          </span>
+        ) : (
+          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+            AI-verified
+          </span>
+        )}
+        <p className="text-right text-xs text-slate-400">
+          Updated {relativeTime(prediction.updatedAt)}
+        </p>
+      </div>
     </Link>
   );
 }

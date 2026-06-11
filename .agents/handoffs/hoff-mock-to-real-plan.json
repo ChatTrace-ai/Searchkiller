@@ -1,0 +1,110 @@
+{
+  "id": "hoff-mock-to-real-plan",
+  "phase": "created",
+  "trace_id": "trace-mock-to-real-001",
+  "input": {
+    "keyword": "Replace all mock/stub APIs with real backend implementations",
+    "subQueries": [
+      "SSE prediction stream endpoint implementation",
+      "Featured prediction seed data refresh",
+      "GoogleProvider stub replacement",
+      "Prediction fallback behavior improvement",
+      "Legacy placeholder cleanup"
+    ]
+  },
+  "output": {
+    "plan": {
+      "title": "Mock→Real API 替换方案",
+      "total_tasks": 5,
+      "tasks": [
+        {
+          "id": "P0-sse",
+          "priority": "P0",
+          "title": "实现 SSE 预测流端点 /api/predictions/[id]/events",
+          "status": "todo",
+          "estimated_hours": 3,
+          "files_to_create": [
+            "app/api/predictions/[id]/events/route.ts"
+          ],
+          "files_to_modify": [
+            "lib/prediction-generator.ts",
+            ".env.example"
+          ],
+          "description": "前端 createRealClient() 已就绪，连接 EventSource 到 /api/predictions/[id]/events。需实现：1) SSE route 从 ES 轮询 prediction 进度并推送 PredictionStreamEvent；2) 修改 prediction-generator 在每步写入进度到 ES（已有 updateProgress 基础）；3) 在 .env 中设 NEXT_PUBLIC_PREDICTION_STREAM_MODE=real",
+          "contract": {
+            "event_types": ["snapshot", "stage", "queries", "sources", "outcomes", "report_delta", "completed", "failed"],
+            "transport": "SSE (text/event-stream)",
+            "client_ready": true,
+            "reducer_ready": true,
+            "ui_ready": true
+          },
+          "implementation_sketch": {
+            "approach": "ES polling SSE — prediction-generator 写进度到 ES detail.progress 字段（已有），SSE route 定期轮询 ES 并推送差异事件",
+            "alternative": "Redis Pub/Sub — generator 发布事件，SSE route 订阅。更实时但增加依赖",
+            "recommended": "ES polling (无新依赖)"
+          }
+        },
+        {
+          "id": "P0-seeds",
+          "priority": "P0",
+          "title": "刷新 featured 预测种子数据为真实内容",
+          "status": "todo",
+          "estimated_hours": 1,
+          "files_to_modify": [
+            "lib/prediction-seeds.ts",
+            "lib/prediction-store.ts"
+          ],
+          "scripts_to_run": [
+            "npx tsx scripts/refresh-all-predictions.ts --delay 8000"
+          ],
+          "description": "32 个 featured 预测使用 buildDetail() 生成合成数据（假来源、模板化分析、固定 82% 置信度）。需：1) 运行 refresh 脚本用真实 Exa+Gemini 管线替换；2) 修改 prediction-store.ts 让新 featured 不再调用 buildDetail，直接走真实管线；3) 或保留 buildDetail 作为初始占位，但标记 status=pending 而非 completed",
+          "risks": [
+            "32 个预测 × 3 Gemini 调用 = 96 次调用，约 50 分钟（含 8s 间隔），可能触发 Pro 10 QPM 限制",
+            "Exa 免费版 1000 searches/month，32×4 sub-queries = 128 次搜索，在额度内"
+          ]
+        },
+        {
+          "id": "P1-google",
+          "priority": "P1",
+          "title": "GoogleProvider 实现或清理",
+          "status": "todo",
+          "estimated_hours": 2,
+          "files_to_modify": [
+            "lib/search-provider.ts"
+          ],
+          "description": "当前 GoogleProvider.search() 返回空数组。方案 A: 实现 Google Custom Search JSON API（需 API key + Custom Search Engine ID）。方案 B: 删除 GoogleProvider，只保留 ExaProvider（Exa 已覆盖语义搜索场景）。推荐方案 B，因 Exa 已足够，Custom Search 需额外付费和配置。",
+          "decision_needed": "实现 Google Custom Search 还是移除 stub？",
+          "recommended": "方案 B — 移除 stub，Exa 已覆盖需求"
+        },
+        {
+          "id": "P1-fallback",
+          "priority": "P1",
+          "title": "改进预测生成失败的 fallback 行为",
+          "status": "todo",
+          "estimated_hours": 1,
+          "files_to_modify": [
+            "lib/prediction-generator.ts"
+          ],
+          "description": "当前 finishWithFallback() 将失败的预测标记为 status=completed + 50/50 默认概率，误导用户。修改为：1) zero sources → status=failed + 明确错误消息；2) analysis 失败 → status=completed 但 confidence=very_low + 警告文本；3) report 失败 → 保持 completed 但 report 字段包含简要说明",
+          "breaking_changes": false
+        },
+        {
+          "id": "P2-legacy",
+          "priority": "P2",
+          "title": "清理遗留 agents/feedback-loop.ts 占位代码",
+          "status": "todo",
+          "estimated_hours": 0.5,
+          "files_to_modify": [
+            "agents/feedback-loop.ts"
+          ],
+          "description": "此文件包含 placeholder report generator（modelUsed: 'placeholder'），但生产路径已使用 harness/feedback-loop.ts + SearchkillerReportGenerator。确认无导入引用后删除或标记 @deprecated。",
+          "risks": ["几乎无风险，文件未被任何 import 引用"]
+        }
+      ]
+    }
+  },
+  "metrics": {
+    "planDurationMs": 0,
+    "modelUsed": "planner-agent"
+  }
+}
