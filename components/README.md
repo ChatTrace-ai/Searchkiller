@@ -15,7 +15,7 @@ Client-side React components for the research dashboard interface.
 | `PredictionCard.tsx` | Popular prediction card with leading outcomes |
 | `PaginatedPredictionGrid.tsx` | Displays 16 paginated cards from page-owned data |
 | `PredictionProgressView.tsx` | Fixed-height progress workspace with independently scrolling live output |
-| `PredictionDetailView.tsx` | Responsive probability table and analysis panels |
+| `PredictionDetailView.tsx` | Responsive probability table with independently scrolling source and report panels |
 
 Interactive components use `'use client'` where browser state is required.
 Legacy research components use Framer Motion; prediction components use CSS

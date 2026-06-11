@@ -77,9 +77,10 @@ export default function PredictionPage({
   }, [id, refreshToken]);
 
   const initialLoading = resolvedId !== id;
+  const lockViewport = initialLoading || Boolean(progress);
 
   return (
-    <div className="h-dvh overflow-hidden bg-slate-50">
+    <div className={`${lockViewport ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-slate-50`}>
       <PredictionHeader onSubmit={createPrediction} />
       {initialLoading && (
         <main

@@ -53,6 +53,65 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByText('Forecast in progress')).toHaveCount(0);
   });
 
+  test('keeps long detail sources and reports inside scrollable panels', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.route('**/api/predictions/pred_long_detail', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'pred_long_detail',
+          question: 'Will the long prediction detail remain usable?',
+          category: 'Technology',
+          status: 'completed',
+          confidence: {
+            level: 'high',
+            score: 82,
+            explanation: 'Multiple independent sources support the forecast.',
+          },
+          outcomes: Array.from({ length: 8 }, (_, index) => ({
+            id: `outcome-${index}`,
+            rank: index + 1,
+            label: `Outcome ${index + 1}`,
+            probability: 20 - index,
+            change: 0,
+            rationale: 'Supported by the collected evidence.',
+            sourceIds: [`source-${index}`],
+          })),
+          sources: Array.from({ length: 12 }, (_, index) => ({
+            id: `source-${index}`,
+            title: `Reference source ${index + 1}`,
+            description: 'Detailed evidence collected for this prediction.',
+            url: `https://example.com/source-${index}`,
+            quality: 'high',
+          })),
+          summary: Array.from(
+            { length: 8 },
+            (_, index) => `Analysis point ${index + 1} explains an important forecast signal.`,
+          ),
+          report: Array.from(
+            { length: 12 },
+            (_, index) => `## Report section ${index + 1}\n\nDetailed analysis for this section.`,
+          ).join('\n\n'),
+          createdAt: '2026-06-11T10:00:00Z',
+          updatedAt: '2026-06-11T10:05:00Z',
+        }),
+      });
+    });
+
+    await page.goto('/prediction/pred_long_detail');
+    await expect(page.getByRole('heading', { name: 'Analysis report' })).toBeVisible();
+
+    for (const testId of ['detail-sources-panel', 'detail-report-panel']) {
+      expect(await page.getByTestId(testId).evaluate((element) => (
+        element.scrollHeight > element.clientHeight
+      ))).toBe(true);
+    }
+    expect(await page.evaluate(() => (
+      getComputedStyle(document.body.firstElementChild as Element).overflowY !== 'hidden'
+    ))).toBe(true);
+  });
+
   test('creates a custom prediction from search', async ({ page }) => {
     await page.goto('/');
     const input = page.getByLabel('Prediction question');

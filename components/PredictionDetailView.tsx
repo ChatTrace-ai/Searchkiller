@@ -179,17 +179,23 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
           </p>
         </section>
 
-        <aside className="min-w-0 space-y-6">
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-950">Reference sources</h2>
-            <div className="mt-5 space-y-5">
+        <aside className="min-w-0 space-y-6 xl:sticky xl:top-6">
+          <section className="flex max-h-[360px] min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="shrink-0 border-b border-slate-200 px-5 py-4">
+              <p className="text-xs font-semibold uppercase text-blue-600">Evidence</p>
+              <h2 className="mt-0.5 text-xl font-bold text-gray-950">Reference sources</h2>
+            </div>
+            <div
+              data-testid="detail-sources-panel"
+              className="min-h-0 flex-1 divide-y divide-slate-200 overflow-y-auto px-5"
+            >
               {prediction.sources.map((source) => (
                 <a
                   key={source.id}
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-start gap-3"
+                  className="group flex items-start gap-3 py-4"
                 >
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-blue-50 text-blue-600">
                     <FileText className="h-5 w-5" />
@@ -209,28 +215,37 @@ export function PredictionDetailView({ prediction }: { prediction: PredictionDet
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-950">Analysis summary</h2>
-            <ul className="mt-4 space-y-3">
-              {prediction.summary.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-6 text-slate-600">
-                  <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            {prediction.report && (
-              <div className="mt-6 border-t border-slate-200 pt-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  <h3 className="font-bold text-slate-900">Forecast report</h3>
-                </div>
-                <div className="prose-report text-sm">
-                  <ReactMarkdown>{prediction.report}</ReactMarkdown>
-                </div>
+          <section className="flex max-h-[520px] min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-5 py-4">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-xs font-semibold uppercase text-blue-600">Forecast</p>
+                <h2 className="mt-0.5 text-xl font-bold text-gray-950">Analysis report</h2>
               </div>
-            )}
-            <p className="mt-6 text-xs text-slate-400">Updated {formatDate(prediction.updatedAt)}</p>
+            </div>
+            <div
+              data-testid="detail-report-panel"
+              className="min-h-0 flex-1 overflow-y-auto px-5 py-5"
+            >
+              <h3 className="font-bold text-slate-900">Analysis summary</h3>
+              <ul className="mt-4 space-y-3">
+                {prediction.summary.map((item) => (
+                  <li key={item} className="flex gap-3 text-sm leading-6 text-slate-600">
+                    <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              {prediction.report && (
+                <div className="mt-6 border-t border-slate-200 pt-5">
+                  <h3 className="mb-3 font-bold text-slate-900">Full report</h3>
+                  <div className="prose-report text-sm">
+                    <ReactMarkdown>{prediction.report}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+              <p className="mt-6 text-xs text-slate-400">Updated {formatDate(prediction.updatedAt)}</p>
+            </div>
           </section>
         </aside>
       </div>
