@@ -11,6 +11,7 @@ Shared utilities and harness adapter (L3 in permission hierarchy).
 | elasticsearch.ts | getClient() (lazy-init), hybridSearch() |
 | schemas.ts | mindMapSchema (Zod 4), MindMapNode, Source, ResearchContext |
 | context-cache.ts | contextCache (Map\<string, ResearchContext\>) |
+| prediction-types.ts | PredictionStatus, PredictionSummary, PredictionDetail, API response types |
 | harness-adapter.ts | SearchkillerJudge, SearchkillerReportGenerator, planSubQueries, fetchSources, startLoop, loopNext, loopApprove, loopCancel |
 
 ## Boundaries

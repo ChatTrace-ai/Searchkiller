@@ -36,6 +36,10 @@ npx playwright test --project=api
 npx playwright test --project=ui
 ```
 
+`predictions.api.test.ts` validates cursor pagination, category filters,
+create/reuse behavior, processing completion, refresh conflicts, probability
+totals, and unified errors without external API keys.
+
 ## Verified Performance
 
 | Test | Duration | Key Metric |

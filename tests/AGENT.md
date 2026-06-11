@@ -14,6 +14,7 @@ Unit tests, integration tests, and E2E pipeline tests for all harness components
 | harness-e2e.integration.test.ts | e2e | Full harness: real Gemini Pro generation + optimized Flash judge |
 | full-pipeline.integration.test.ts | e2e | Plan → Fetch (Exa) → Generate (Pro) → Judge (Flash) full pipeline |
 | evaluate.api.test.ts | api | /api/evaluate and /api/plan endpoint tests |
+| predictions.api.test.ts | api | Prediction v1 pagination, lifecycle, refresh, and errors |
 | homepage.ui.test.ts | ui | Homepage rendering and navigation tests |
 | agent.state.test.ts | state | .agents/ directory integrity and lifecycle tests |
 

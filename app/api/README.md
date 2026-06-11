@@ -1,6 +1,6 @@
 # api/ — API Route Handlers
 
-Next.js Route Handlers for the research pipeline. All routes accept POST requests with JSON bodies and return JSON or streaming responses.
+Next.js Route Handlers for research, prediction, and evaluation workflows.
 
 ## Routes
 
@@ -10,9 +10,17 @@ Next.js Route Handlers for the research pipeline. All routes accept POST request
 | `/api/research/fetch` | `{keyword, subQueries}` | `{sessionId, sources}` |
 | `/api/research/report` | `{sessionId}` | Streaming Markdown text |
 | `/api/research/mindmap` | `{sessionId}` | Streaming JSON (tree structure) |
+| `GET /api/predictions/popular` | `{cursor?, limit?, category?}` | Cursor-paginated prediction summaries |
+| `POST /api/predictions` | `{question}` | Create or reuse prediction |
+| `GET /api/predictions/:id` | Path ID | Progress or completed prediction detail |
+| `POST /api/predictions/:id/refresh` | Path ID | Restart prediction generation |
 
 | `POST /api/evaluate` | `{action, ...}` | HITL evaluation (initialize/config/evaluate/evaluate_trace/stats) |
 
 ## Session Model
 
 `/api/research/fetch` creates an in-memory session keyed by `sessionId`. The `report` and `mindmap` routes consume that session's cached context for streaming generation.
+
+Prediction v1 uses a process-local mock repository with 32 featured records and
+a two-second simulated generation cycle. It is API-compatible with a future
+persistent repository.

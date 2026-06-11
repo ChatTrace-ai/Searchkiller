@@ -11,6 +11,7 @@ Pure utility modules consumed by the application and agent layers, plus the harn
 | `elasticsearch.ts` | Elasticsearch Serverless hybrid search, BM25 + kNN (lazy-initialized) |
 | `schemas.ts` | Zod 4 schemas (`mindMapSchema`) and TypeScript interfaces (`Source`, `ResearchContext`, `MindMapNode`) |
 | `context-cache.ts` | In-memory session cache (`Map<string, ResearchContext>`) shared by research API routes |
+| `prediction-types.ts` | Prediction API v1 request and response contracts |
 | `harness-adapter.ts` | **Sole bridge** between `harness/` (L0) and `agents/` (L1). Implements `IJudge` and `IReportGenerator`, provides `planSubQueries`, `fetchSources`, and loop management functions |
 
 ## Harness Adapter Pipeline
