@@ -17,7 +17,7 @@ Shared utilities and harness adapter (L3 in permission hierarchy).
 | prediction-seeds.ts | Featured prediction seed catalog, buildDetail(), RESULT_TTL_MS |
 | es-client.ts | getClient() (lazy-init Elasticsearch Serverless) |
 | search-provider.ts | ISearchProvider implementations (Exa, Google), getActiveProviders() |
-| harness-adapter.ts | SearchkillerJudge, SearchkillerReportGenerator, planSubQueries, fetchSources, startLoop, loopNext, loopApprove, loopCancel |
+| harness-adapter.ts | LLMJudge, ReportGenerator, planSubQueries, fetchSources, startLoop, loopNext, loopApprove, loopCancel |
 
 ## Boundaries
 - reads: NONE (leaf dependency, except harness-adapter which bridges L0+L1)

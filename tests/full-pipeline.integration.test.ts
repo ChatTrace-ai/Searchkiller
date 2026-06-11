@@ -1,7 +1,7 @@
 /**
  * Full Pipeline Integration Test — Plan → Fetch → Generate → Judge
  *
- * Tests the complete Searchkiller harness pipeline with real APIs:
+ * Tests the complete harness pipeline with real APIs:
  *   1. Plan: Gemini Flash generates sub-queries
  *   2. Fetch: Exa.ai semantic search fetches real sources
  *   3. Generate: Gemini Pro creates the report

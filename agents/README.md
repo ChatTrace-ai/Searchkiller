@@ -1,6 +1,6 @@
 # agents/ — Multi-Agent Logic Layer
 
-Source code for the two primary agents in the Searchkiller system:
+Source code for the two primary agents in the Laplace's Demon system:
 
 - **Planner** (`planner/`): Decomposes high-level research tasks into execution steps, generates sub-queries, and emits structured traces to `.agents/traces/`.
 - **Evaluator** (`evaluator/`): Initialized by a human via HITL (defining criteria, thresholds, and rules), then runs autonomously to judge execution outcomes. Routes approved patterns to Golden Benchmarks and rejected patterns to the Failure Management store.

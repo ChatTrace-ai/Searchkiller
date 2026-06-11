@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://searchkiller.local/schemas/agent-md.schema.json",
+  "$id": "https://laplaces-demon.local/schemas/agent-md.schema.json",
   "title": "AGENT.md Structure",
   "description": "Defines the required structural sections for all AGENT.md files.",
   "type": "object",

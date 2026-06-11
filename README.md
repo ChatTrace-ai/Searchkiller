@@ -1,6 +1,6 @@
-# Searchkiller
+# Laplace's Demon
 
-**Searchkiller**（内部代号 G-RapidAgent）是一个面向 Google Cloud Hackathon 的关键词驱动流式调研智能体。输入任意探究性关键词，即可获得结构化行业分析报告与交互式思维导图，由 Gemini 2.5、Exa.ai 语义搜索与 Elasticsearch 混合检索驱动。
+**Laplace's Demon** is an AI prediction engine built for the Google Cloud Hackathon. Ask any forward-looking question and get a probability-grounded research report with cited sources — powered by Gemini 2.5, Exa.ai neural search, and Elasticsearch's hybrid retrieval engine.
 
 **Repository:** [github.com/ChatTrace-ai/Searchkiller](https://github.com/ChatTrace-ai/Searchkiller)
 
@@ -22,53 +22,49 @@ cp .env.example .env
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and enter a research keyword.
+Open [http://localhost:3000](http://localhost:3000) and ask a prediction question.
 
 ## Architecture
 
 ```
-User keyword
-  → Gemini Flash (query planner: 3-5 sub-queries)
-  → Exa.ai (semantic web scraping, parallel)
-  → Elasticsearch (hybrid BM25 + kNN against internal docs)
-  → Gemini Pro (parallel streaming):
-      ├── Markdown analysis report
-      └── Structured mind-map JSON → react-d3-tree
+User question
+  → Gemini Flash (query planner: 3–5 sub-queries)
+  → Elasticsearch kNN cache (check for existing knowledge)
+  → Exa.ai (semantic web search for uncovered queries)
+  → Gemini extracts structured knowledge → index back to ES
+  → Gemini Pro (evidence reasoning + probability estimation)
+  → Streaming report with SSE real-time progress
 ```
+
+## The Elastic Backbone
+
+Elasticsearch is the central nervous system of Laplace's Demon:
+
+- **Knowledge Cache (kNN)** — Dense vector store for incremental knowledge. Cosine similarity ≥ 0.85 eliminates redundant external searches.
+- **Hybrid Retrieval (BM25 + kNN + RRF)** — Combines keyword precision with semantic understanding via Reciprocal Rank Fusion.
+- **Prediction Persistence** — Every prediction, its sources, and reasoning chains are stored as structured documents.
+- **Knowledge Graph Evolution** — Related queries enrich each other's evidence base over time.
 
 ## Multi-Agent System
 
-Searchkiller uses a **Planner + Evaluator** dual-agent architecture with a **Harness Framework** for iterative quality improvement:
+Laplace's Demon uses a **Planner + Evaluator** dual-agent architecture with a **Harness Framework** for iterative quality improvement:
 
 - **Planner**: Decomposes tasks, generates execution traces, orchestrates the research pipeline.
-- **Evaluator (HITL)**: Judges execution outcomes with mandatory human-in-the-loop approval.
+- **Evaluator**: Judges execution outcomes across 5 dimensions with automated backend probes.
 - **Harness Framework**: 4-layer decoupled architecture for iterative feedback loops.
 
-### Harness Pipeline (Full-Auto)
+### Harness Pipeline
 
 ```
-keyword → Plan (Flash, 6s) → Fetch (Exa+ES, 1s) → Generate (Pro, 72s) → Judge (Flash, 5s) → score
+question → Plan (Flash, 6s) → Fetch (ES+Exa, 1s) → Generate (Pro, 72s) → Judge (Flash, 5s) → score
                                                                               ↓
                                                iterate with feedback ← FAIL (score < threshold)
-                                               approve + archive    ← PASS (score >= threshold)
+                                               approve + archive    ← PASS (score ≥ threshold)
 ```
 
-**Components**: Handoff Protocol | Sprint Contract | LLM-as-Judge | Feedback Loop Engine
+**Components**: Handoff Protocol | Sprint Contract | LLM-as-Judge | Backend Probes | Feedback Loop Engine
 
-See [doc/harness-engineering.html](doc/harness-engineering.html) for the full technical documentation with interactive diagrams.
-
-## Repository as Trace System
-
-Every directory (except `doc/`) contains:
-- `README.md` — Human onboarding and context
-- `AGENT.md` — Machine-readable operational manifest
-
-Run verification:
-```bash
-bash scripts/verify-dual-md.sh   # Check dual-markdown compliance
-python scripts/lint-agent-md.py  # Validate AGENT.md schemas
-python scripts/uniformize.py     # Auto-fix structural drift
-```
+See [doc/harness-engineering.html](doc/harness-engineering.html) for the full technical documentation.
 
 ## Tech Stack
 
@@ -79,18 +75,11 @@ python scripts/uniformize.py     # Auto-fix structural drift
 | AI Models | Gemini 2.5 Pro / Flash via Vertex AI (`@ai-sdk/google-vertex`) |
 | AI SDK | Vercel AI SDK v6 (`ai@^6.0`) + Zod 4 |
 | Web Search | Exa.ai semantic search (`exa-js@^2.13`) |
-| Internal Search | Elasticsearch Serverless (BM25 + kNN) |
+| Knowledge Store | Elasticsearch Serverless (BM25 + kNN + RRF) |
 | Visualization | react-d3-tree + Framer Motion 12 |
 | Styling | TailwindCSS |
 | Deployment | Docker → GCP Cloud Run |
-
-## Parallel Development
-
-Uses `git worktree` for isolated feature branches:
-```bash
-bash scripts/worktree-new.sh my-feature
-# Creates ../Searchkiller-my-feature on branch feat/my-feature
-```
+| CI/CD | GitHub Actions → Artifact Registry → Cloud Run |
 
 ## Directory Overview
 
@@ -104,8 +93,17 @@ bash scripts/worktree-new.sh my-feature
 | `.agents/` | — | Runtime file store (handoffs, contracts, loops, traces) |
 | `tests/` | — | Unit, integration, and E2E pipeline tests |
 | `scripts/` | — | SSOT verification and automation tools |
-| `doc/` | — | Technical documentation (harness-engineering.html) |
+| `doc/` | — | Technical documentation |
+
+## Deployment
+
+```bash
+# One-click deploy to Cloud Run
+bash scripts/deploy-cloud-run.sh
+```
+
+See [doc/cloud-run-deploy-guide.md](doc/cloud-run-deploy-guide.md) for detailed instructions.
 
 ## License
 
-Hackathon project — not yet licensed.
+[MIT](LICENSE)

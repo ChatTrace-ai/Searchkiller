@@ -1,6 +1,6 @@
 # tests/ — Test Suites
 
-Unit, integration, and E2E tests for the Searchkiller harness and API.
+Unit, integration, and E2E tests for the Laplace's Demon harness and API.
 
 ## Test Categories
 

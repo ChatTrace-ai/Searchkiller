@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://searchkiller.local/schemas/evaluator-config.schema.json",
+  "$id": "https://laplaces-demon.local/schemas/evaluator-config.schema.json",
   "title": "Evaluator Configuration",
   "description": "Human-defined configuration that initializes the Evaluator via HITL. Once written, the Evaluator runs autonomously using these criteria.",
   "type": "object",

@@ -1,5 +1,5 @@
 /**
- * Harness Adapter — bridges generic harness framework with Searchkiller specifics
+ * Harness Adapter — bridges generic harness framework with application specifics
  *
  * This adapter lives in lib/ (L3), allowing app/ (L2) to use the harness
  * without directly importing from agents/ (L1) or harness/ (L0).
@@ -39,12 +39,12 @@ import { BackendJudge, BACKEND_DIMENSIONS } from '@/agents/evaluator/backend-jud
 import { extractReportMetrics } from '@/harness/handoff';
 
 // ---------------------------------------------------------------------------
-// Searchkiller IJudge implementations
+// IJudge implementations
 // ---------------------------------------------------------------------------
 
 export type JudgeMode = 'llm' | 'backend' | 'composite';
 
-class SearchkillerJudge implements IJudge {
+class LLMJudge implements IJudge {
   async evaluate(handoff: HandoffDocument, dimensions: ScoreDimension[]): Promise<JudgeResult> {
     const result = await runLLMJudge(handoff, dimensions);
     return {
@@ -59,7 +59,7 @@ class SearchkillerJudge implements IJudge {
  * (infrastructure quality from handoff data), then merges scores.
  */
 class CompositeJudge implements IJudge {
-  private llmJudge = new SearchkillerJudge();
+  private llmJudge = new LLMJudge();
   private backendJudge = new BackendJudge();
 
   async evaluate(handoff: HandoffDocument, dimensions: ScoreDimension[]): Promise<JudgeResult> {
@@ -99,7 +99,7 @@ class CompositeJudge implements IJudge {
 }
 
 // ---------------------------------------------------------------------------
-// Searchkiller IReportGenerator — real Gemini Pro generation
+// IReportGenerator — real Gemini Pro generation
 // ---------------------------------------------------------------------------
 
 const REPORT_SYSTEM_PROMPT = `你是一个世界顶尖的行业分析专家。基于用户的研究关键词和提供的互联网实时抓取数据，
@@ -110,7 +110,7 @@ const REPORT_SYSTEM_PROMPT = `你是一个世界顶尖的行业分析专家。�
 4. 中文为主，技术术语保留英文
 5. 总字数控制在 1500-3000 字`;
 
-class SearchkillerReportGenerator implements IReportGenerator {
+class ReportGenerator implements IReportGenerator {
   async generate(input: {
     keyword: string;
     subQueries: string[];
@@ -223,10 +223,10 @@ export async function fetchSources(
 // Singleton instances
 // ---------------------------------------------------------------------------
 
-const llmJudge = new SearchkillerJudge();
+const llmJudge = new LLMJudge();
 const backendJudge = new BackendJudge();
 const compositeJudge = new CompositeJudge();
-const generator = new SearchkillerReportGenerator();
+const generator = new ReportGenerator();
 
 function getJudge(mode: JudgeMode = 'llm'): IJudge {
   switch (mode) {

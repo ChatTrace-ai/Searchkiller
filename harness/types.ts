@@ -2,7 +2,7 @@
  * Harness Framework — Core Interface Definitions
  *
  * These interfaces decouple the generic harness framework from
- * any specific application (e.g., Searchkiller). Application code
+ * any specific application (e.g., Laplace's Demon). Application code
  * implements these interfaces; the harness operates through them.
  */
 

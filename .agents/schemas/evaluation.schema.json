@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://searchkiller.local/schemas/evaluation.schema.json",
+  "$id": "https://laplaces-demon.local/schemas/evaluation.schema.json",
   "title": "Evaluation Record",
   "description": "An evaluation verdict for a trace, stored in golden/ or failures/.",
   "type": "object",

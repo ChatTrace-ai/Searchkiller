@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://searchkiller.local/schemas/trace.schema.json",
+  "$id": "https://laplaces-demon.local/schemas/trace.schema.json",
   "title": "Execution Trace",
   "description": "A single execution trace record emitted by the Planner and judged by the Evaluator.",
   "type": "object",

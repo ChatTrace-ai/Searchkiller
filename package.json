@@ -1,7 +1,8 @@
 {
-  "name": "searchkiller",
+  "name": "laplaces-demon",
   "version": "0.1.0",
-  "private": true,
+  "description": "AI prediction engine powered by Elasticsearch knowledge graph and Gemini reasoning",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

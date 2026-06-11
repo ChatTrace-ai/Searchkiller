@@ -1,7 +1,7 @@
-# AGENTS.md — Searchkiller System Manifest
+# AGENTS.md — Laplace's Demon System Manifest
 
 ## Identity
-system: searchkiller
+system: laplaces-demon
 version: 0.2.0
 agents: [planner, evaluator]
 runtime: next.js-15-edge
@@ -76,4 +76,4 @@ no_agent_rewrite: [doc/*, .github/*, Dockerfile]
 ## Worktree Policy
 branching: git worktree for parallel feature work
 main: protected; merge only via evaluated traces
-pattern: git worktree add ../Searchkiller-{feature} -b feat/{name}
+pattern: git worktree add ../laplaces-demon-{feature} -b feat/{name}
