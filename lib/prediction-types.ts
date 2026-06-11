@@ -29,6 +29,7 @@ export interface PredictionDetail {
   category: string;
   icon?: string;
   status: PredictionStatus;
+  dataSource?: PredictionDataSource;
   confidence: {
     level: ConfidenceLevel;
     score: number;

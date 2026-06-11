@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { PredictionDetailView } from '@/components/PredictionDetailView';
 import { PredictionHeader } from '@/components/PredictionHeader';
@@ -8,6 +8,14 @@ import { PredictionProgressView } from '@/components/PredictionProgressView';
 import type { PredictionDetail, PredictionProgress } from '@/lib/prediction-types';
 import { useCreatePrediction } from '../../use-create-prediction';
 import { usePredictionStream } from '../use-prediction-stream';
+
+const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1_000; // 4 hours
+
+function isStale(detail: PredictionDetail & { dataSource?: string }): boolean {
+  if (detail.dataSource === 'seed') return true;
+  const age = Date.now() - new Date(detail.updatedAt).getTime();
+  return age > STALE_THRESHOLD_MS;
+}
 
 export default function PredictionPage({
   params,
@@ -21,6 +29,7 @@ export default function PredictionPage({
   const [error, setError] = useState<string | null>(null);
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+  const autoRefreshedRef = useRef(false);
 
   const refreshPrediction = useCallback(() => {
     setRefreshToken((current) => current + 1);
@@ -39,6 +48,17 @@ export default function PredictionPage({
 
     setError(null);
 
+    const triggerRefresh = async () => {
+      try {
+        const res = await fetch(`/api/predictions/${id}/refresh`, { method: 'POST' });
+        if (res.ok || res.status === 409) {
+          setPrediction(null);
+          setProgress(null);
+          setRefreshToken((c) => c + 1);
+        }
+      } catch {}
+    };
+
     const load = async () => {
       try {
         const response = await fetch(`/api/predictions/${id}`, { cache: 'no-store' });
@@ -56,6 +76,12 @@ export default function PredictionPage({
 
         if (body.status === 'failed') {
           throw new Error(body.error?.message || 'Prediction generation failed.');
+        }
+
+        if (!autoRefreshedRef.current && isStale(body)) {
+          autoRefreshedRef.current = true;
+          await triggerRefresh();
+          return;
         }
 
         setPrediction(body);
