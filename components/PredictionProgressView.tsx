@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BarChart3,
   Check,
@@ -68,6 +68,8 @@ export function PredictionProgressView({
 }) {
   const [startedAt] = useState(() => Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const streamPanelRef = useRef<HTMLDivElement>(null);
+  const followStreamRef = useRef(true);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -86,34 +88,83 @@ export function PredictionProgressView({
     () => streamState.message || progress?.progress.message || activeStage.detail,
     [activeStage.detail, progress?.progress.message, streamState.message],
   );
+  const hasStreamContent = (
+    streamState.queries.length > 0 ||
+    streamState.sources.length > 0 ||
+    streamState.draftOutcomes.length > 0 ||
+    Boolean(streamState.reportPreview)
+  );
+  const streamRevisionKey = [
+    streamState.stage,
+    streamState.queries.length,
+    streamState.sources.length,
+    streamState.draftOutcomes.length,
+    streamState.reportPreview.length,
+  ].join(':');
+
+  useEffect(() => {
+    const panel = streamPanelRef.current;
+    if (!panel || !followStreamRef.current) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [streamRevisionKey]);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-10 sm:py-14 lg:px-8">
-      <div className="border-b border-slate-200 pb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <span className="inline-flex items-center gap-2 font-semibold text-blue-700">
-            <LoaderCircle className="h-4 w-4 animate-spin" />
-            Forecast in progress
-          </span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-500">Usually takes 1-2 minutes</span>
-          {streamMode === 'mock' && (
-            <span className="rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-              Preview stream
-            </span>
-          )}
-        </div>
-        <h1 className="mt-4 max-w-4xl text-balance text-3xl font-bold text-slate-950 sm:text-4xl">
-          {progress?.question || 'Preparing your prediction'}
-        </h1>
-        <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-          {statusMessage}
-        </p>
-      </div>
+    <main className="mx-auto flex h-[calc(100dvh-5rem)] w-full max-w-[1500px] flex-col overflow-hidden px-5 py-5 lg:px-8">
+      <header className="shrink-0 border-b border-slate-200 pb-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="inline-flex items-center gap-2 font-semibold text-blue-700">
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Forecast in progress
+              </span>
+              <span className="text-slate-300">/</span>
+              <span className="text-slate-500">Usually takes 1-2 minutes</span>
+            </div>
+            <h1 className="mt-2 max-w-4xl text-balance text-2xl font-bold text-slate-950 sm:text-3xl">
+              {progress?.question || 'Preparing your prediction'}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              {statusMessage}
+            </p>
+          </div>
 
-      <div className="grid gap-10 py-9 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-16">
-        <div className="min-w-0">
-          <section aria-labelledby="prediction-progress-heading">
+          <dl className="flex shrink-0 items-center gap-5 border-t border-slate-200 pt-3 text-sm lg:border-l lg:border-t-0 lg:pl-6 lg:pt-1">
+            <div>
+              <dt className="text-xs text-slate-400">Elapsed</dt>
+              <dd className="mt-0.5 font-semibold tabular-nums text-slate-900">
+                {formatElapsed(elapsedSeconds)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-400">Step</dt>
+              <dd className="mt-0.5 font-semibold text-slate-900">
+                {completedCount + 1}/{stages.length}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-400">Stream</dt>
+              <dd className={`mt-0.5 font-semibold ${
+                streamAvailable ? 'text-emerald-700' : 'text-amber-700'
+              }`}>
+                {streamAvailable
+                  ? streamMode === 'mock' ? 'Preview' : 'Live'
+                  : 'Polling'}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </header>
+
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(230px,0.8fr)_minmax(0,1.2fr)] gap-5 pt-5 lg:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.35fr)] lg:grid-rows-1">
+        <section
+          aria-labelledby="prediction-progress-heading"
+          className="min-h-0 overflow-y-auto pr-2"
+        >
             <div className="flex items-end justify-between gap-6">
               <div>
                 <p className="text-sm font-medium text-slate-500">Research progress</p>
@@ -194,9 +245,49 @@ export function PredictionProgressView({
                 );
               })}
             </ol>
-          </section>
+        </section>
 
-          <div className="mt-4 space-y-10 border-t border-slate-200 pt-9">
+        <section
+          aria-labelledby="live-activity-heading"
+          className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+        >
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-3.5 sm:px-6">
+            <div>
+              <p className="text-xs font-semibold uppercase text-blue-600">Live activity</p>
+              <h2 id="live-activity-heading" className="mt-0.5 text-lg font-semibold text-slate-950">
+                Research output
+              </h2>
+            </div>
+            <span className="inline-flex items-center gap-2 text-xs font-medium text-slate-500">
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-blue-600" />
+              Updating
+            </span>
+          </div>
+
+          <div
+            ref={streamPanelRef}
+            data-testid="prediction-stream-panel"
+            className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6"
+            onScroll={(event) => {
+              const panel = event.currentTarget;
+              followStreamRef.current = (
+                panel.scrollHeight - panel.scrollTop - panel.clientHeight < 80
+              );
+            }}
+          >
+            {!hasStreamContent && (
+              <div className="flex min-h-48 flex-col items-center justify-center text-center">
+                <Search className="h-6 w-6 text-slate-300" />
+                <p className="mt-3 text-sm font-medium text-slate-700">
+                  Waiting for research output
+                </p>
+                <p className="mt-1 max-w-sm text-sm leading-5 text-slate-400">
+                  Queries, sources, probability estimates, and report text will appear here.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-9">
             {streamState.queries.length > 0 && (
               <section aria-labelledby="research-queries-heading">
                 <p className="text-xs font-semibold uppercase text-slate-400">Research plan</p>
@@ -288,41 +379,16 @@ export function PredictionProgressView({
                 </div>
               </section>
             )}
-          </div>
-        </div>
 
-        <aside className="border-t border-slate-200 pt-7 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-          <dl className="space-y-7">
-            <div>
-              <dt className="text-xs font-semibold uppercase text-slate-400">Elapsed time</dt>
-              <dd className="mt-2 text-2xl font-semibold tabular-nums text-slate-950">
-                {formatElapsed(elapsedSeconds)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-slate-400">Steps complete</dt>
-              <dd className="mt-2 text-lg font-semibold text-slate-950">
-                {completedCount} of {stages.length}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-slate-400">Current activity</dt>
-              <dd className="mt-2 text-sm leading-6 text-slate-600">{statusMessage}</dd>
-            </div>
-          </dl>
-
-          <div className="mt-8 border-t border-slate-200 pt-6">
-            <p className="text-sm leading-6 text-slate-500">
-              This page updates automatically. You can leave it open while the forecast is generated.
-            </p>
             {!streamAvailable && (
-              <p className="mt-4 flex gap-2 text-sm leading-6 text-amber-700">
+              <p className="flex gap-2 border-t border-slate-200 pt-5 text-sm leading-6 text-amber-700">
                 <CircleAlert className="mt-1 h-4 w-4 shrink-0" />
                 Live updates are unavailable. Status updates will continue through polling.
               </p>
             )}
+            </div>
           </div>
-        </aside>
+        </section>
       </div>
     </main>
   );

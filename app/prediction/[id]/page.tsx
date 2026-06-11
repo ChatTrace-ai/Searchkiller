@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
+import { LoaderCircle } from 'lucide-react';
 import { PredictionDetailView } from '@/components/PredictionDetailView';
 import { PredictionHeader } from '@/components/PredictionHeader';
 import { PredictionProgressView } from '@/components/PredictionProgressView';
@@ -18,6 +19,7 @@ export default function PredictionPage({
   const [prediction, setPrediction] = useState<PredictionDetail | null>(null);
   const [progress, setProgress] = useState<PredictionProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
   const refreshPrediction = useCallback(() => {
@@ -35,6 +37,8 @@ export default function PredictionPage({
     let cancelled = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
 
+    setError(null);
+
     const load = async () => {
       try {
         const response = await fetch(`/api/predictions/${id}`, { cache: 'no-store' });
@@ -43,7 +47,9 @@ export default function PredictionPage({
         if (cancelled) return;
 
         if (body.status === 'processing') {
+          setPrediction(null);
           setProgress(body);
+          setResolvedId(id);
           timeout = setTimeout(load, 2_000);
           return;
         }
@@ -54,9 +60,11 @@ export default function PredictionPage({
 
         setPrediction(body);
         setProgress(null);
+        setResolvedId(id);
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : 'Prediction could not be loaded.');
+          setResolvedId(id);
         }
       }
     };
@@ -68,16 +76,29 @@ export default function PredictionPage({
     };
   }, [id, refreshToken]);
 
+  const initialLoading = resolvedId !== id;
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="h-dvh overflow-hidden bg-slate-50">
       <PredictionHeader onSubmit={createPrediction} />
-      {error && (
+      {initialLoading && (
+        <main
+          aria-label="Loading prediction"
+          className="grid h-[calc(100dvh-5rem)] place-items-center px-5"
+        >
+          <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
+            <LoaderCircle className="h-5 w-5 animate-spin text-blue-600" />
+            Loading prediction
+          </div>
+        </main>
+      )}
+      {!initialLoading && error && (
         <div className="mx-auto max-w-xl px-5 py-24 text-center">
           <h1 className="text-2xl font-bold text-slate-900">Prediction unavailable</h1>
           <p className="mt-3 text-slate-500">{error}</p>
         </div>
       )}
-      {!error && !prediction && (
+      {!initialLoading && !error && progress && (
         <PredictionProgressView
           progress={progress}
           streamState={streamState}
@@ -85,7 +106,7 @@ export default function PredictionPage({
           streamAvailable={streamAvailable}
         />
       )}
-      {prediction && <PredictionDetailView prediction={prediction} />}
+      {!initialLoading && prediction && <PredictionDetailView prediction={prediction} />}
     </div>
   );
 }

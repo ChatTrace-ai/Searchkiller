@@ -32,6 +32,27 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByText('Analysis summary')).toBeVisible();
   });
 
+  test('does not flash generation progress before a completed prediction loads', async ({ page }) => {
+    let releaseResponse: (() => void) | undefined;
+    const responseReady = new Promise<void>((resolve) => {
+      releaseResponse = resolve;
+    });
+
+    await page.route('**/api/predictions/world-cup-2026', async (route) => {
+      await responseReady;
+      await route.continue();
+    });
+
+    await page.goto('/prediction/world-cup-2026', { waitUntil: 'commit' });
+    await expect(page.getByLabel('Loading prediction')).toBeVisible();
+    await expect(page.getByText('Forecast in progress')).toHaveCount(0);
+
+    releaseResponse?.();
+
+    await expect(page.locator('h1')).toContainText('2026 FIFA World Cup');
+    await expect(page.getByText('Forecast in progress')).toHaveCount(0);
+  });
+
   test('creates a custom prediction from search', async ({ page }) => {
     await page.goto('/');
     const input = page.getByLabel('Prediction question');
@@ -72,7 +93,7 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByRole('heading', {
       name: 'Will the multilingual launch ship this month?',
     })).toBeVisible();
-    await expect(page.getByText('Preview stream')).toBeVisible();
+    await expect(page.getByText('Preview', { exact: true })).toBeVisible();
 
     await page.clock.fastForward(13_000);
 
@@ -84,6 +105,19 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByText('Leading outcome', { exact: true })).toBeVisible();
     await expect(page.getByText('Preliminary assessment')).toBeVisible();
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '90');
+    await expect(page.getByText('Elapsed')).toBeVisible();
+    await expect(page.getByText('Step')).toBeVisible();
+
+    const streamPanel = page.getByTestId('prediction-stream-panel');
+    expect(await streamPanel.evaluate((element) => (
+      element.scrollHeight > element.clientHeight
+    ))).toBe(true);
+    await expect.poll(async () => streamPanel.evaluate((element) => (
+      element.scrollHeight - element.scrollTop - element.clientHeight
+    ))).toBeLessThan(2);
+    expect(await page.evaluate(() => (
+      document.documentElement.scrollHeight <= window.innerHeight
+    ))).toBe(true);
   });
 
   test('uses polling as final authority and switches to completed detail', async ({ page }) => {
@@ -194,6 +228,12 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByRole('heading', { name: 'Analysis report' })).toBeVisible();
     expect(await page.evaluate(() => (
       document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    ))).toBe(true);
+    expect(await page.evaluate(() => (
+      document.documentElement.scrollHeight <= window.innerHeight
+    ))).toBe(true);
+    expect(await page.getByTestId('prediction-stream-panel').evaluate((element) => (
+      element.scrollHeight > element.clientHeight
     ))).toBe(true);
   });
 });
