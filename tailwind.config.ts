@@ -40,8 +40,8 @@ const config: Config = {
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
         bounceSlow: {
-          '0%, 100%': { transform: 'rotate(45deg) translateY(-2px)', opacity: '0.4' },
-          '50%': { transform: 'rotate(45deg) translateY(4px)', opacity: '1' },
+          '0%, 100%': { opacity: '0.25' },
+          '50%': { opacity: '1' },
         },
       },
     },
