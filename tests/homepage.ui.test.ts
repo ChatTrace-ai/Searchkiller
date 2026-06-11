@@ -6,6 +6,7 @@ test.describe('Prediction homepage', () => {
     await expect(page.getByText('Searchkiller').first()).toBeVisible();
     await expect(page.locator('h1')).toContainText('Search anything you want to predict');
     await expect(page.getByLabel('Prediction question')).toBeVisible();
+    await expect(page.getByLabel('Prediction question')).toHaveCount(1);
     await expect(page.locator('a[href^="/prediction/"]')).toHaveCount(16);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });

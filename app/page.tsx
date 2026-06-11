@@ -20,7 +20,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-white">
-      <PredictionHeader onSubmit={createPrediction} />
+      <PredictionHeader onSubmit={createPrediction} showSearch={false} />
 
       <section className="prediction-hero border-b border-slate-100">
         <div className="mx-auto max-w-5xl px-5 py-16 text-center sm:py-20">
