@@ -7,6 +7,12 @@ RUN npm ci
 
 COPY . .
 RUN mkdir -p public
+
+# Bake public env vars into the client bundle at build time.
+# These are safe to hard-code: they configure frontend behaviour, not secrets.
+ENV NEXT_PUBLIC_PREDICTION_STREAM_MODE=real
+ENV NEXT_PUBLIC_APP_URL=https://g-rapid-agent-445462299562.us-central1.run.app
+
 RUN npm run build
 
 # Production stage
